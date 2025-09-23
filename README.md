@@ -49,19 +49,6 @@ It is jointly maintained by the **Taiwan RAID/DS team** and the **Vietnam Nexcel
 - `http://10.18.200.198:8000/merge-to-excel` - Data merging
 - `http://10.18.200.198:8000/download-excel` - File download
 
-## 👥 Team Responsibilities
-
-### Taiwan Team (RAID/DS)
-- Develop workflows for major leagues/events
-- Initial workflow development and architecture
-- Core system integration
-- Performance optimization
-
-### Vietnam Team (Nexcel)
-- Maintain workflows for additional leagues/sports
-- Extend integration capabilities
-- Contribute enhancements and improvements
-- Monitor and troubleshoot existing workflows
 
 ## 🛠️ Technical Requirements
 
@@ -150,16 +137,7 @@ When adding new workflows, include:
 - Check email delivery status
 - Validate data formats and structures
 
-## 📞 Support
-
-For issues or questions:
-- **Taiwan Team**: Contact RAID/DS team members
-- **Vietnam Team**: Contact Nexcel team members
-- **Technical Issues**: Check n8n logs and API responses
-- **Repository Issues**: Create an issue or merge request
-
 ---
 
 **Last Updated**: September 2025
-**Maintained By**: Taiwan RAID/DS Team & Vietnam Nexcel Team
 
