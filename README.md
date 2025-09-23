@@ -42,13 +42,6 @@ It is jointly maintained by the **Taiwan RAID/DS team** and the **Vietnam Nexcel
 7. **File Download** - Retrieves the merged Excel file
 8. **Email Distribution** - Sends results to stakeholders
 
-**Recipients**:
-- robert.tseng@onelab.tw
-- ben.chen@onelab.tw
-- lientruong0508@gmail.com
-- sukyfeng87@gmail.com
-- rdrd33@gmail.com
-
 **API Endpoints**:
 - `http://10.18.200.198:8000/download-iptv` - IPTV data extraction
 - `http://10.18.200.198:8000/check-leagues` - League information
