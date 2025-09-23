@@ -1,0 +1,366 @@
+{
+  "name": "IPTV",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.18.200.198:8000/download-iptv",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "start_date",
+              "value": "={{ $json.today_dmy }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.tomorrow_dmy }}"
+            },
+            {
+              "name": "=filename",
+              "value": "={{ $json.today_ymd }}_{{ $json.tomorrow_ymd }}.csv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        -368
+      ],
+      "id": "e326104d-3f07-4cc3-b4c4-08d7f6ca52f4",
+      "name": "Extract IPTV Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.18.200.198:8000/merge-to-excel",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"iptv_path\": \"{{ $('Extract IPTV Data').item.json.filename }}\",\n  \"infosite_path\": \"{{ $('Extract-infosite').item.json.file_path }}\",\n  \"output_filename\": \"{{ $('Code').item.json.today_ymd }}_{{ $('Code').item.json.tomorrow_ymd }}\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1184,
+        -144
+      ],
+      "id": "6db97b80-7214-4493-8791-56c6ab2aaa53",
+      "name": "Merge to Excel"
+    },
+    {
+      "parameters": {
+        "url": "=http://10.18.200.198:8000/download-excel",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "data_type",
+              "value": "merge"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $('Code').item.json.today_ymd }}_{{ $('Code').item.json.tomorrow_ymd }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -976,
+        -144
+      ],
+      "id": "57a9531f-b750-4ba6-a5a3-647385dee4f0",
+      "name": "Get Execel"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 7 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 1);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\nfunction formatDDMMYYYY(date) {\n  const dd = String(date.getDate()).padStart(2, '0');\n  const mm = String(date.getMonth() + 1).padStart(2, '0');\n  const yyyy = date.getFullYear();\n  return `${dd}/${mm}/${yyyy}`;\n}\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n  today_dmy: formatDDMMYYYY(todayPlus8),       // 17/09/2025\n  tomorrow_dmy: formatDDMMYYYY(tomorrow)       // 18/09/2025\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        -592
+      ],
+      "id": "b6410b55-565f-4ba7-b15c-5ec4a4da4a31",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "fromEmail": "taiwan-demo@starific.net ",
+        "toEmail": "robert.tseng@onelab.tw, ben.chen@onelab.tw,lientruong0508@gmail.com,sukyfeng87@gmail.com,rdrd33@gmail.com",
+        "subject": "test",
+        "emailFormat": "text",
+        "text": "=Hi All \nThis is Up2 Data from  {{ $('Code').item.json.today_ymd }} to {{ $('Code').item.json.tomorrow_ymd }}",
+        "options": {
+          "attachments": "data"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        -144
+      ],
+      "id": "01a8dc92-f2d3-4eda-bbb3-31204fa91e67",
+      "name": "Send Result",
+      "webhookId": "575bf6e1-b323-43a3-8117-2830c35a163a",
+      "credentials": {
+        "smtp": {
+          "id": "2JzL8gDmwfoJVNvl",
+          "name": "VN_SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.18.200.198:8000/check-leagues",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"start_time\": \"{{ $('Code').item.json.today_ymd }}\",\n  \"end_time\": \"{{ $('Code').item.json.tomorrow_ymd }}\",\n  \"filename\": \"{{ $('Code').item.json.today_ymd }}_{{ $('Code').item.json.tomorrow_ymd }}\",\n  \"league_groups\": [\n    \"Soccerway\",\n    \"IMG\",\n    \"Virtual\",\n    \"RB Upload\",\n    \"RTS Upload\",\n    \"BG Upload\",\n    \"BETRADAR Upload\"\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1024,
+        -368
+      ],
+      "id": "e824ecd7-05cd-4926-9e9d-7145f224e1d5",
+      "name": "League_Name"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Extract League').item.json.batches }}",
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -368
+      ],
+      "id": "515ab37a-761d-4c38-94ed-1f2fd0f47815",
+      "name": "Wait",
+      "webhookId": "dbbce0cc-2c10-414f-b16c-6b1bfa10dd0f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($input.first().json.leagues);\n\nlet items = raw.split(\",\")// \n  .map(item => `\"${item}\"`);                   // 加上引號\nconst count = items.length;\nconst batches = Math.ceil(count / 50); \nreturn {\n  result: `[${items.join(\", \")}]`,\n  batches: batches*3\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -368
+      ],
+      "id": "800dff87-e5ca-419b-8a8f-16ab686dea43",
+      "name": "Extract League"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.18.200.198:8000/download-infosite",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"start_time\": \"{{ $('Code').item.json.today_ymd }}\",\n  \"end_time\": \"{{ $('Code').item.json.tomorrow_ymd }}\",\n  \"filename\": \"{{ $('Code').item.json.today_ymd }}_{{ $('Code').item.json.tomorrow_ymd }}\",\n  \"leagues\": {{ $json.result }},\n  \"league_groups\": [\n    \"Soccerway\",\n    \"IMG\",\n    \"Virtual\",\n    \"RB Upload\",\n    \"RTS Upload\",\n    \"BG Upload\",\n    \"BETRADAR Upload\"\n  ],\n  \"sports\": [\n    \"Soccer\"\n  ],\n  \"save_features\": [],\n  \"batch_size\": 50\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        -368
+      ],
+      "id": "8edea509-e61e-499d-971b-06f226e2fe9a",
+      "name": "Extract-infosite"
+    },
+    {
+      "parameters": {
+        "content": "## Extract IPTV and Infosite Data",
+        "height": 240,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -464
+      ],
+      "id": "17e21b25-3a2c-4bb2-8b1d-bd50c0f6ecbd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Merge to formula and Send Email ",
+        "height": 224,
+        "width": 832,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -224
+      ],
+      "id": "f6b9b9da-2dd6-4d2f-bde6-e77b389184f9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Execute Workflow",
+        "height": 192,
+        "width": 832,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -656
+      ],
+      "id": "78706b24-86c1-4473-bdc2-c68b36f355bd",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1184,
+        -592
+      ],
+      "id": "5143a12a-18af-491c-a6b8-4385719b95e0",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract IPTV Data": {
+      "main": [
+        [
+          {
+            "node": "League_Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge to Excel": {
+      "main": [
+        [
+          {
+            "node": "Get Execel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Execel": {
+      "main": [
+        [
+          {
+            "node": "Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Extract IPTV Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "League_Name": {
+      "main": [
+        [
+          {
+            "node": "Extract League",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract League": {
+      "main": [
+        [
+          {
+            "node": "Extract-infosite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Merge to Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract-infosite": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e911ff1-15ee-4492-b371-24f7fbaf9648",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "Bk0glFoKTLLbjUeJ",
+  "tags": []
+}
