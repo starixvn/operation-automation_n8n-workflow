@@ -1,0 +1,908 @@
+{
+  "name": "Search New Team",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ",
+          "mode": "list",
+          "cachedResultName": "Search Team Name",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1184,
+        144
+      ],
+      "id": "ba131ddd-7679-4415-be49-70c5428b1d88",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vgZbc9FU79oy7SOd",
+          "name": "Google Sheets account 18"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        928
+      ],
+      "id": "e5dde1df-d3f2-4ad6-88c4-57fdb33726dc",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ijbo7W7c0ViBZAss",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn $input.all().map(item => {\n  return {\n    json : {\n      \"TeamName\": item.json[\"Team Name\"]\n    }\n  }\n})"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        144
+      ],
+      "id": "fac920c5-8e4d-4c0d-9cdc-f137258b8439",
+      "name": "Filter Team Name"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -240,
+        80
+      ],
+      "id": "fb636ddf-90fe-4ae1-b971-7d8f4efadf12",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ",
+          "mode": "list",
+          "cachedResultName": "Search Team Name",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 85741646,
+          "mode": "list",
+          "cachedResultName": "Output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit#gid=85741646"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TeamName": "={{ $('Check Team Correct').item.json.output.TeamName }}",
+            "Result": "={{ $('Check Team Correct').item.json.output.Result }}",
+            "WebSite": "={{ $('Check Team Correct').item.json.output.WebSite.join(',\\n') }}",
+            "Traditional Chinese": "={{ $('Translate').item.json.output['Traditional Chinese'] }}",
+            "Simplified Chinese": "={{ $('Translate').item.json.output['Simplified Chinese'] }}",
+            "Vietnamese": "={{ $('Translate').item.json.output.Vietnamese }}",
+            "Thai": "={{ $('Translate').item.json.output.Thai }}",
+            "English": "={{ $('Translate').item.json.output.English }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "TeamName",
+              "displayName": "TeamName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WebSite",
+              "displayName": "WebSite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Traditional Chinese",
+              "displayName": "Traditional Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Simplified Chinese",
+              "displayName": "Simplified Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vietnamese",
+              "displayName": "Vietnamese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Thai",
+              "displayName": "Thai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "English",
+              "displayName": "English",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1328,
+        400
+      ],
+      "id": "73cf8c84-7d39-4d05-93ea-c96220b8c39e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vgZbc9FU79oy7SOd",
+          "name": "Google Sheets account 18"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -112
+      ],
+      "id": "130485d7-5dd4-4895-bce9-fe2acee16284",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"Traditional Chinese\": \"索勒姆桑体育会\",\n  \"Simplified Chinese\": \"索勒姆桑体育会\",\n  \"Vietnamese\": \"Câu lạc bộ thể thao Sørumsand\",\n  \"Thai\": \"สมาคมกีฬาเซอรูมซานด์\",\n  \"English\": \"Sorumsand IF\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        400
+      ],
+      "id": "4792b878-979e-431f-b2cb-5812dc07ee62",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1632,
+        432
+      ],
+      "id": "47d295bb-b646-4fe8-ae3e-798a31dc07ec",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Translate \"{{ $json.output.TeamName }}\" into the following languages or use \"https://translate.google.com/\" tool to do this.\nFor English, do not translate the word. Keep the English style (like Google Translate usually outputs) and double-check with the official website if possible.\n⚠️ Important rules:\n1. Traditional Chinese and Simplified Chinese must remain in Chinese (絕對不允許夾帶英文), Only return the short team name.\n2. Vietnamese and Thai follow their standard translation style.  \n3. English must be fully in English letters only, no Chinese characters allowed. \n4. - For English, convert all non-English letters into plain English letters.  (Ø→O, Å→A, Æ→AE, Ö→O, Ü→U, etc.)\nReturn the result in a single-line JSON object in this format: ",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        48
+      ],
+      "id": "39483b92-45d2-4d97-a8c9-abdf8e063e45",
+      "name": "Translate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Confirm the team name \"{{ $json.TeamName }}\" for soccer sport is correct or not, and give me multiple web site url to dobule confirm. The reuslt use json object and don't new line.\nProperties include \"TeamName\": {string}, \"Result\": \"Correct || Incorrect, \"WebSite\" : {array string}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        144
+      ],
+      "id": "ab7c63c2-1fed-48e6-968a-023fc2152243",
+      "name": "Check Team Correct"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ccfc7a9c-1918-4c55-b9c6-5328facc04b7",
+              "leftValue": "={{ $json.output.Result }}",
+              "rightValue": "Correct",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        64
+      ],
+      "id": "9cc598d7-498e-4c34-b6b6-0bbfd63e6ee3",
+      "name": "if Correct"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"TeamName\": \"AS Monaco\",\n  \"Result\": \"Correct\",\n  \"WebSite\": [\"https://www.asmonaco.com/en/\",\"https://en.wikipedia.org/wiki/AS_Monaco_FC\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -592,
+        432
+      ],
+      "id": "0e14cc71-a165-49e2-a202-1ae5cfba9c39",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        144
+      ],
+      "id": "19743da0-b915-4c53-a84b-ab92d28a7729",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a fact-checking assistant for soccer team names.  \nGiven a set of names in multiple languages (Chinese, Vietnamese, Thai, English, etc.), follow these rules:  \n\n1. Search authoritative sources (Google Search, Wikipedia, UEFA, ESPN, official club websites) to verify each name.  \n2. If ALL provided names are valid in reliable sources → return \"Correct\".  \n3. If ANY name is not found or invalid → return \"Incorrect\".  \n4. The final output must be a single-line JSON object with two properties only:  \n   - \"TeamName\": the English name of the team  \n   - \"Result\": \"Correct\" or \"Incorrect\"  \n\nDo not include explanations or extra text, only the JSON result."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        48
+      ],
+      "id": "c75b3145-4225-4cfa-929e-3a0a164e492d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8e0d3f4e-b6bd-4582-97af-60eb54ca432e",
+              "leftValue": "={{ $json.output.Result }}",
+              "rightValue": "Correct",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        48
+      ],
+      "id": "474ec077-e2e3-4d6e-a893-2062bc5e6222",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"TeamName\": \"AS Monaco\",\n  \"Result\": \"Correct\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        896,
+        320
+      ],
+      "id": "10100c80-16a0-4309-be88-4fa1234ccb00",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ",
+          "mode": "list",
+          "cachedResultName": "Search Team Name",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 85741646,
+          "mode": "list",
+          "cachedResultName": "Output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit#gid=85741646"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TeamName": "={{ $('Check Team Correct').item.json.output.TeamName }}",
+            "Result": "={{ $('Check Team Correct').item.json.output.Result }}",
+            "WebSite": "={{ $('Check Team Correct').item.json.output.WebSite.join(',\\n') }}",
+            "English": "={{ $('Translate').item.json.output.English }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "TeamName",
+              "displayName": "TeamName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WebSite",
+              "displayName": "WebSite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Traditional Chinese",
+              "displayName": "Traditional Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Simplified Chinese",
+              "displayName": "Simplified Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vietnamese",
+              "displayName": "Vietnamese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thai",
+              "displayName": "Thai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "English",
+              "displayName": "English",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        64
+      ],
+      "id": "27bd385b-54c2-4cec-9dec-178bb6e04469",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vgZbc9FU79oy7SOd",
+          "name": "Google Sheets account 18"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ",
+          "mode": "list",
+          "cachedResultName": "Search Team Name",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 85741646,
+          "mode": "list",
+          "cachedResultName": "Output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZIFe-8bb1ViY5eCSEMYaQ0ZA6jO-49_e3hqLywAfVbQ/edit#gid=85741646"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TeamName": "={{ $json.output.TeamName }}",
+            "Result": "={{ $json.output.Result }}",
+            "WebSite": "={{ $json.output.WebSite.join(',\\n') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "TeamName",
+              "displayName": "TeamName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WebSite",
+              "displayName": "WebSite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Traditional Chinese",
+              "displayName": "Traditional Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Simplified Chinese",
+              "displayName": "Simplified Chinese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vietnamese",
+              "displayName": "Vietnamese",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thai",
+              "displayName": "Thai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "English",
+              "displayName": "English",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -64,
+        320
+      ],
+      "id": "54db57ce-2ea6-421f-8479-440c66bf8be2",
+      "name": "Append row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vgZbc9FU79oy7SOd",
+          "name": "Google Sheets account 18"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Team Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Check Team Correct",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Translate",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Team Name": {
+      "main": [
+        [
+          {
+            "node": "Check Team Correct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if Correct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Translate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Team Correct": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if Correct": {
+      "main": [
+        [
+          {
+            "node": "Translate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Check Team Correct",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c53c1265-46d5-4db2-94a1-6facc2abc182",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "8L8mZzcKd9XaPWGn",
+  "tags": []
+}
