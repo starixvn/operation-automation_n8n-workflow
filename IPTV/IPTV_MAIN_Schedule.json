@@ -1,0 +1,181 @@
+{
+  "name": "IPTV_MAIN_Schedule",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                0,
+                3,
+                4,
+                5,
+                6
+              ],
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -992,
+        -176
+      ],
+      "id": "9a609956-7e99-4e33-a33c-35a9b7e51636",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "G25m5HDkXmJY3hma",
+          "mode": "list",
+          "cachedResultName": "IPTV_schedule"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "day": "={{ $json.day }}"
+          },
+          "matchingColumns": [
+            "day"
+          ],
+          "schema": [
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -128
+      ],
+      "id": "529bfcb6-7051-4a62-ade1-ec1a78659c9b",
+      "name": "Execute Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -448,
+        -176
+      ],
+      "id": "fdc90e83-2951-4c1c-a76b-6a6ff12d628e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().getDay();\n\nconst mapping = {\n  0: [5],       // Sunday\n  3: [3],       // Wednesday\n  4: [3, 4],    // Thursday\n  5: [4, 5],    // Friday\n  6: [5]        // Saturday\n};\n\n// 根據 today 取得結果（預設空陣列）\nconst result = mapping[today] || [];\n\n// 輸出成 [{day: 3}, {day: 4}, ...] 格式\nreturn result.map(day => ({ day }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -176
+      ],
+      "id": "8dbebc88-061e-427f-88ce-d15699fa34ac",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -272
+      ],
+      "id": "394a5aa8-67c1-4800-a311-dd0c5d122847",
+      "name": "Code1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "FOBPKmfaPmVggU2N"
+  },
+  "versionId": "98a25055-a4b6-4c65-b950-c6144cc20e23",
+  "meta": {
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "FOBPKmfaPmVggU2N",
+  "tags": []
+}

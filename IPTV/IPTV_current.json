@@ -1,5 +1,5 @@
 {
-  "name": "IPTV",
+  "name": "IPTV_current",
   "nodes": [
     {
       "parameters": {
@@ -27,7 +27,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1168,
+        -1200,
         -368
       ],
       "id": "e326104d-3f07-4cc3-b4c4-08d7f6ca52f4",
@@ -45,7 +45,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1184,
+        -1200,
         -144
       ],
       "id": "6db97b80-7214-4493-8791-56c6ab2aaa53",
@@ -72,7 +72,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -976,
+        -992,
         -144
       ],
       "id": "57a9531f-b750-4ba6-a5a3-647385dee4f0",
@@ -80,13 +80,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 7 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 1);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\nfunction formatDDMMYYYY(date) {\n  const dd = String(date.getDate()).padStart(2, '0');\n  const mm = String(date.getMonth() + 1).padStart(2, '0');\n  const yyyy = date.getFullYear();\n  return `${dd}/${mm}/${yyyy}`;\n}\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n  today_dmy: formatDDMMYYYY(todayPlus8),       // 17/09/2025\n  tomorrow_dmy: formatDDMMYYYY(tomorrow)       // 18/09/2025\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
+        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 8 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 1);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\nfunction formatDDMMYYYY(date) {\n  const dd = String(date.getDate()).padStart(2, '0');\n  const mm = String(date.getMonth() + 1).padStart(2, '0');\n  const yyyy = date.getFullYear();\n  return `${dd}/${mm}/${yyyy}`;\n}\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n  today_dmy: formatDDMMYYYY(todayPlus8),       // 17/09/2025\n  tomorrow_dmy: formatDDMMYYYY(tomorrow)       // 18/09/2025\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -992,
-        -592
+        -944,
+        -640
       ],
       "id": "b6410b55-565f-4ba7-b15c-5ec4a4da4a31",
       "name": "Code"
@@ -94,7 +94,7 @@
     {
       "parameters": {
         "fromEmail": "taiwan-demo@starific.net ",
-        "toEmail": "robert.tseng@onelab.tw, ben.chen@onelab.tw,lientruong0508@gmail.com,sukyfeng87@gmail.com,rdrd33@gmail.com",
+        "toEmail": "robert.tseng@onelab.tw, ben.chen@onelab.tw,rdrd33@gmail.com,lientruong0508@gmail.com,sukyfeng87@gmail.com,rdrd33@gmail.com",
         "subject": "test",
         "emailFormat": "text",
         "text": "=Hi All \nThis is Up2 Data from  {{ $('Code').item.json.today_ymd }} to {{ $('Code').item.json.tomorrow_ymd }}",
@@ -105,7 +105,7 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        -800,
+        -816,
         -144
       ],
       "id": "01a8dc92-f2d3-4eda-bbb3-31204fa91e67",
@@ -130,7 +130,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1024,
+        -1040,
         -368
       ],
       "id": "e824ecd7-05cd-4926-9e9d-7145f224e1d5",
@@ -144,7 +144,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        -544,
+        -560,
         -368
       ],
       "id": "515ab37a-761d-4c38-94ed-1f2fd0f47815",
@@ -153,12 +153,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = String($input.first().json.leagues);\n\nlet items = raw.split(\",\")// \n  .map(item => `\"${item}\"`);                   // 加上引號\nconst count = items.length;\nconst batches = Math.ceil(count / 50); \nreturn {\n  result: `[${items.join(\", \")}]`,\n  batches: batches*3\n};"
+        "jsCode": "const raw = String($input.first().json.leagues);\n\nlet items = raw.split(\",\")// \n  .map(item => `\"${item}\"`);                   // 加上引號\nconst count = items.length;\nconst batches = Math.ceil(count / 50); \nreturn {\n  result: `[${items.join(\", \")}]`,\n  batches: batches*4\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -864,
+        -880,
         -368
       ],
       "id": "800dff87-e5ca-419b-8a8f-16ab686dea43",
@@ -176,7 +176,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -688,
+        -704,
         -368
       ],
       "id": "8edea509-e61e-499d-971b-06f226e2fe9a",
@@ -191,7 +191,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1248,
+        -1264,
         -464
       ],
       "id": "17e21b25-3a2c-4bb2-8b1d-bd50c0f6ecbd",
@@ -207,7 +207,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1248,
+        -1264,
         -224
       ],
       "id": "f6b9b9da-2dd6-4d2f-bde6-e77b389184f9",
@@ -216,15 +216,15 @@
     {
       "parameters": {
         "content": "## Execute Workflow",
-        "height": 192,
+        "height": 272,
         "width": 832,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1248,
-        -656
+        -1264,
+        -736
       ],
       "id": "78706b24-86c1-4473-bdc2-c68b36f355bd",
       "name": "Sticky Note2"
@@ -234,8 +234,8 @@
         "rule": {
           "interval": [
             {
-              "triggerAtHour": 17,
-              "triggerAtMinute": 1
+              "field": "cronExpression",
+              "expression": "1 5,17 * * *"
             }
           ]
         }
@@ -243,11 +243,11 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1184,
-        -592
+        -1216,
+        -640
       ],
       "id": "5143a12a-18af-491c-a6b8-4385719b95e0",
-      "name": "Schedule Trigger"
+      "name": "Schedule Trigger_morning"
     }
   ],
   "pinData": {},
@@ -340,7 +340,7 @@
         ]
       ]
     },
-    "Schedule Trigger": {
+    "Schedule Trigger_morning": {
       "main": [
         [
           {
@@ -354,9 +354,15 @@
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "Bk0glFoKTLLbjUeJ",
+    "saveManualExecutions": true
   },
-  "versionId": "2e911ff1-15ee-4492-b371-24f7fbaf9648",
+  "versionId": "40d27339-05ed-41db-a94e-edc1f028064e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
