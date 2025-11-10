@@ -1,0 +1,413 @@
+{
+  "name": "IPTV_insert_DB",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        112,
+        0
+      ],
+      "id": "0d390dec-9316-4f8a-8112-4722a59725aa",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 8 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 1);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        16
+      ],
+      "id": "8ebbaa0d-8900-4770-a0e4-087a65fca8ad",
+      "name": "Extract time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 每組 20 筆\nconst batchSize = 20;\n\n// 假設上游輸出在 $json.output 或 $json.events\nconst events = $input.first().json.data;\n\nconst batches = [];\nfor (let i = 0; i < events.length; i += batchSize) {\n  batches.push({\n    json: {\n      events: events.slice(i, i + batchSize)\n    }\n  });\n}\n\nreturn batches;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "14867b9c-7143-406e-b7f5-56d74aa9950a",
+      "name": "Split match"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://eventcollectingservice.kl.starixuat.com/IPTV/events",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "events",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        928,
+        80
+      ],
+      "id": "52080ba5-c5d8-450c-88b2-20845514b648",
+      "name": "Update into DB",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.18.200.198:8000/download-iptv",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "start_date",
+              "value": "={{ $json.today_ymd }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.tomorrow_ymd }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        16
+      ],
+      "id": "f2874ea9-c7e6-467c-acff-c47315c28f71",
+      "name": "Crawling",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -64
+      ],
+      "id": "1d72c2b8-e967-4aef-bf0f-e4b3018dfb51",
+      "name": "End"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 3
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        16
+      ],
+      "id": "ab550acb-2fd5-4d6f-ac3d-601da11a8933",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"eventId\": 123123,\n    \"leagueName\": \"Primera A\",\n    \"homeTeamName\": \"Libertad\",\n    \"awayTeamName\": \"Independiente Valle\",\n    \"channel\": \"Stadium Feed\",\n    \"kickoffTime\": \"2025-11-04T08:00:00.000Z\",\n    \"alive\": true,\n    \"status\": true\n  },\n  {\n    \"eventId\": 23412431,\n    \"leagueName\": \"Superliga\",\n    \"homeTeamName\": \"Banfield\",\n    \"awayTeamName\": \"Lanús\",\n    \"channel\": \"Stadium Feed\",\n    \"kickoffTime\": \"2025-11-04T08:15:00.000Z\",\n    \"alive\": true,\n    \"status\": true\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        272
+      ],
+      "id": "5091659e-ccf2-4c1d-b45a-6d71115f6d3b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.events }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are given match records in JSON format, each containing the following fields:\nleagueName, homeTeamName, and awayTeamName.\n\nYour task is to validate and correct the leagueName by identifying the accurate league or competition associated with the given teams.\n\nRules:\n\t1.\tFor each match row, use the homeTeamName、awayTeamName and leagueName to determine the correct league name, including the country and division level., e.g.\n\t•\t\"Brazil Serie A\"\n\t•\t\"Japan J3 League\"\n\t•\t\"Russia First League\"\n\t2.\tIf both teams belong to the same domestic league, replace the leagueName field with that league’s full name (including country and tier).\n\t3.\tIf the match belongs to a cup, continental, or international competition, detect and fill in the correct tournament name (e.g.\n\t•\t\"UEFA Women’s Champions League\",\n\t•\t\"Copa Colombia\",\n\t•\t\"FIFA U20 World Cup\",\n\t•\t\"Copa Sudamericana\").\n\t4.\tIf no clear league association can be determined, keep the original leagueName value."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        80
+      ],
+      "id": "8ffb2245-c21d-411b-8e0d-f86c2be02ab5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        272
+      ],
+      "id": "eac2d081-b591-4d67-be9c-1c7f109ecfc1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "I3qp7DIrbnOMJskH",
+          "name": "CTO-DS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Loop Over Items').first().json.events;   // 或直接你的原資料\nconst fake = $input.first().json.output;     // 另一組要用來\nconst result = {\n  output: input.map((item, index) => ({\n    ...item,\n    leagueName: fake[index]?.leagueName || item.leagueName\n  }))\n};\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        80
+      ],
+      "id": "6cf3e90c-ebe0-4852-b5f2-f8e8a8c7f451",
+      "name": "Intergate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b88a3de-2373-478f-a0b0-2f7691c55635",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "f22936a5-5a6d-4999-acbd-13be97e79718",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "http://10.18.200.198:8000/login",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -256,
+        256
+      ],
+      "id": "51eb51e4-9e6e-4609-9d71-360854ade4ab",
+      "name": "login",
+      "retryOnFail": true,
+      "maxTries": 5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract time": {
+      "main": [
+        [
+          {
+            "node": "Crawling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split match": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update into DB": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawling": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Intergate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intergate": {
+      "main": [
+        [
+          {
+            "node": "Update into DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Split match",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "login": {
+      "main": [
+        [
+          {
+            "node": "Crawling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "152b93a5-5a92-4e98-a4ce-dc58311cf9e3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "urSpbXHjbk49dG7l",
+  "tags": []
+}
