@@ -20,10 +20,12 @@ It is jointly maintained by the **Taiwan RAID/DS team** and the **Vietnam Nexcel
 
 ## 🏗️ Current Workflows
 
-### IPTV Workflow (`IPTV.json`)
+### IPTV Workflows (`IPTV/`)
 **Purpose**: Automated daily extraction and processing of IPTV and Infosite data
 
-**Schedule**: Daily at 17:01 (5:01 PM)
+#### IPTV_MAIN_Schedule
+- **Schedule**: Weekly on Sunday, Wednesday, Thursday, Friday, Saturday at 7:00 AM
+- **Function**: Main scheduler that triggers IPTV_schedule workflow
 
 **Process Flow**:
 1. **Date Calculation** - Generates today and tomorrow dates in multiple formats (YYYY-MM-DD, DD/MM/YYYY)
@@ -42,12 +44,43 @@ It is jointly maintained by the **Taiwan RAID/DS team** and the **Vietnam Nexcel
 7. **File Download** - Retrieves the merged Excel file
 8. **Email Distribution** - Sends results to stakeholders
 
+#### IPTV_insert_DB
+- **Purpose**: Inserts IPTV event data into database
+- **Process Flow**:
+  1. **Date Calculation** - Generates today and tomorrow dates (UTC+8)
+  2. **Data Splitting** - Splits events into batches of 20 items
+  3. **Database Insertion** - Posts events to Event Collecting Service API
+  4. **Batch Processing** - Processes events in batches using loop
+
+#### IPTV_current
+- **Purpose**: Current IPTV data processing workflow
+
 **API Endpoints**:
 - `http://10.18.200.198:8000/download-iptv` - IPTV data extraction
 - `http://10.18.200.198:8000/check-leagues` - League information
 - `http://10.18.200.198:8000/download-infosite` - Infosite data extraction
 - `http://10.18.200.198:8000/merge-to-excel` - Data merging
 - `http://10.18.200.198:8000/download-excel` - File download
+- `https://eventcollectingservice.kl.starixuat.com/IPTV/events` - Event database insertion
+
+### BetCity Workflow (`BetCity/`)
+- **BetCity - Event.json**: BetCity event processing workflow
+
+### BWF Workflow (`BWF/`)
+- **BWF_Crawler.json**: BWF (Badminton World Federation) data crawler workflow
+
+### Futbol24 Workflow (`Futbol24/`)
+- **Futbol24 - Event.json**: Futbol24 event processing workflow
+
+### SearchAndCheckWithOpenAI Workflow (`SearchAndCheckWithOpenAI/`)
+- **search_new_team.json**: AI-powered team name validation and translation workflow
+- **Purpose**: Validates soccer team names using AI and translates them into multiple languages
+- **Features**:
+  - Team name validation using OpenAI
+  - Multi-language translation (Traditional Chinese, Simplified Chinese, Vietnamese, Thai, English)
+  - Google Sheets integration for input/output
+  - Batch processing with error handling
+- **See**: `SearchAndCheckWithOpenAI/README.md` for detailed documentation
 
 
 ## 🛠️ Technical Requirements
@@ -75,9 +108,23 @@ It is jointly maintained by the **Taiwan RAID/DS team** and the **Vietnam Nexcel
 
 ```
 n8n-workflow/
-├── README.md          # This documentation
-├── IPTV.json          # IPTV data processing workflow
-└── [future workflows] # Additional workflows will be added here
+├── README.md                          # This documentation
+├── IPTV/                              # IPTV data processing workflows
+│   ├── IPTV_MAIN_Schedule.json        # Main scheduler workflow
+│   ├── IPTV_schedule.json             # Scheduled IPTV data processing
+│   ├── IPTV_insert_DB.json            # Database insertion workflow
+│   └── IPTV_current.json              # Current IPTV processing
+├── BetCity/                           # BetCity workflows
+│   └── BetCity - Event.json           # BetCity event processing
+├── BWF/                               # BWF workflows
+│   └── BWF_Crawler.json               # BWF data crawler
+├── Futbol24/                          # Futbol24 workflows
+│   └── Futbol24 - Event.json          # Futbol24 event processing
+└── SearchAndCheckWithOpenAI/          # AI-powered team validation
+    ├── README.md                      # Detailed workflow documentation
+    ├── search_new_team.json           # Team name validation workflow
+    ├── n8n_example.png                # Workflow diagram
+    └── workflow-sequence-diagram.md   # Sequence diagram documentation
 ```
 
 ## 🚀 Getting Started
@@ -101,10 +148,14 @@ n8n-workflow/
 ### Adding New Workflows
 1. **Export** workflow from n8n in **JSON format**
 2. **Name** the file descriptively (e.g., `EventCheck.json`)
-3. **Place** the JSON file in the repository root
+3. **Organize** workflows into appropriate directories:
+   - Create a new directory if it's a new workflow category
+   - Place related workflows in the same directory
+   - Use descriptive directory names (e.g., `IPTV/`, `BetCity/`)
 4. **Update** this README.md with workflow details
-5. **Test** the workflow thoroughly
-6. **Open** a Merge Request for review
+5. **Add** a detailed README.md in the workflow directory if the workflow is complex
+6. **Test** the workflow thoroughly
+7. **Open** a Merge Request for review
 
 ### Workflow Documentation Template
 When adding new workflows, include:
@@ -138,6 +189,4 @@ When adding new workflows, include:
 - Validate data formats and structures
 
 ---
-
-**Last Updated**: September 2025
 
