@@ -1,0 +1,205 @@
+{
+  "name": "Futbol24 - Event",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -144
+      ],
+      "id": "a1b91aa6-0852-45f7-9347-cf7599d0c4e8",
+      "name": "XML to Json"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Cookie",
+              "value": "uid1=AAAACmjyTcNPHEr2BG/sAg==; _pk_ses.1.705a=*; _ga=GA1.2.1617544798.1760710090; _gid=GA1.2.785044185.1760710090; uid2=1761317170_abdc9bcd3cdc23fd5bcf25139fcd8ff2; _pk_id.1.705a=891e91aba52349fb.1760710090.1.1760712769.1760710090.; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1760710091$o1$g1$t1760712769$j60$l0$h0"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        -144
+      ],
+      "id": "fd0fc497-1ff4-4964-b91c-7a16cbccc68a",
+      "name": "HTTP Request - Get F24 Web Event"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取得輸入資料\nconst data = $('XML to Json').first().json;\n// 展開所有比賽並只提取需要的欄位\nconst output = [];\n\n// 建立 league ID 到完整 league info 的映射\nconst leagueMap = {};\nconst eventStatusMap = {};\n\nif (data.F24?.Kraje?.K && Array.isArray(data.F24.Kraje.K)) {\n  data.F24.Kraje.K.forEach(country => {\n    const countryName = country.KN || '';\n    \n    // 處理 L 可能是陣列或單一物件的情況\n    const leagues = Array.isArray(country.L) ? country.L : [country.L];\n    \n    leagues.forEach(league => {\n      if (league?.LId && league?.LN) {\n        // 儲存主聯賽資訊\n        leagueMap[league.LId] = {\n          country: countryName,\n          league: league.LN,\n          subLeague: ''\n        };\n        \n        // 處理子聯賽 (PL 可能是陣列或單一物件)\n        if (league.PL) {\n          const subLeagues = Array.isArray(league.PL) ? league.PL : [league.PL];\n          \n          subLeagues.forEach(subLeague => {\n            if (subLeague?.LId && subLeague?.LN) {\n              leagueMap[subLeague.LId] = {\n                country: countryName,\n                league: league.LN,\n                subLeague: subLeague.LN\n              };\n            }\n          });\n        }\n      }\n    });\n  });\n}\n\n// 建立 match ID 到 event status 的映射\nif (data.F24?.Zd?.Z && Array.isArray(data.F24.Zd.Z)) {\n  data.F24.Zd.Z.forEach(eventStatus => {\n    if (eventStatus.MId && eventStatus.CM) {\n      const matchId = eventStatus.MId;\n      const eventInfo = eventStatus.CM;\n      \n      // 直接覆蓋，最後一個會保留\n      eventStatusMap[matchId] = eventInfo;\n    }\n  });\n} // ✅ 只要一個 }\n\n// 檢查並展開 Mecze 陣列\nif (data.F24?.Mecze?.M && Array.isArray(data.F24.Mecze.M)) {\n  data.F24.Mecze.M.forEach(match => {\n    var eventTimeStamp = match.C0 || '';\n    const date = new Date((eventTimeStamp * 1000) + (8 * 60 * 60 * 1000));\n    const eventDate = date.toISOString().split('T')[0];\n    const eventTime = date.toISOString().slice(0, 19);\n    \n    // 優先使用 LId (子聯賽),如果沒有則使用 _LId (主聯賽)\n    const leagueId = match.LId || match._LId || '';\n    const leagueInfo = leagueMap[leagueId] || { country: '', league: '', subLeague: '' };\n    \n    output.push({\n      json: {\n        Cid: match.KId,\n        CName: leagueInfo.country || '',\n        MId: match.MId || '',\n        EventDate: eventDate,\n        EventTime: eventTime,\n        PLeagueId: match._LId,\n        LeagueId: match.LId,\n        PLeagueName: leagueInfo.league || \"\",\n        LeagueName: leagueInfo.subLeague || \"\",\n        HomeId: match.HId,\n        HomeName: match.HN || '',\n        AwayId: match.GId,\n        AwayName: match.GN || '',\n        EventStatus: match.MStan,\n        FScore: match.S1 || '',\n        HScore: match.S2 || '',\n        HRedCard: match.HRCi || '',\n        ARedCard: match.GRCi || '',\n      }\n    });\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -144
+      ],
+      "id": "9b8debc5-6f78-49ac-9e9f-1ebe5517e836",
+      "name": "Extract Event Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://eventcollectingservice.kl.starixuat.com/Futbol24/events",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={{    JSON.stringify(         {\"events\":$(\"Extract Event Data\").all().map(item => item.json)}         ) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        -144
+      ],
+      "id": "5bded120-5a07-40ab-9f1a-c3c6b0bedd07",
+      "name": "HTTP Request1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 14 days\nfor (let i = 0; i < 2; i++) {\n  const date = new Date(today);\n  date.setDate(today.getDate() + i);\n  urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n}\n\n// Add live now URL\nurls.push('https://p.futbol24.com/f24/u/liveNow_15.xml');\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        -144
+      ],
+      "id": "2d4c7e4c-e63e-4626-a7c5-b42e1d5fd815",
+      "name": "Get Web Url1"
+    },
+    {
+      "parameters": {
+        "content": "#TODO\nupdate url when data collecting service ready",
+        "height": 80,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -240
+      ],
+      "id": "79c51490-da0d-4e8d-807a-0fb3d645a435",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -144
+      ],
+      "id": "7af8d5ab-c88c-4e21-b179-5ce8d2f74d5a",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "XML to Json": {
+      "main": [
+        [
+          {
+            "node": "Extract Event Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Get F24 Web Event": {
+      "main": [
+        [
+          {
+            "node": "XML to Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Event Data": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Web Url1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Get F24 Web Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Web Url1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4be02b7d-d749-4d23-b657-0624a71ab20b",
+  "meta": {
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "z3v784gDWHDEWxQu",
+  "tags": [
+    {
+      "createdAt": "2025-10-16T13:38:49.224Z",
+      "updatedAt": "2025-10-16T13:38:49.224Z",
+      "id": "qCf5QyC1sH7HDqXP",
+      "name": "Soccer"
+    },
+    {
+      "createdAt": "2025-10-16T13:37:44.342Z",
+      "updatedAt": "2025-10-16T13:37:44.342Z",
+      "id": "eCqNi5YNjJc2sg4m",
+      "name": "futbol24"
+    }
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "name": "BetCity - Event",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sport-id-basketball",
+              "name": "basketballSportId",
+              "value": "3",
+              "type": "string"
+            },
+            {
+              "id": "sport-id-volleyball",
+              "name": "volleyballSportId",
+              "value": "12",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "20240c70-2ea5-4462-8920-f36293beab0f",
+      "name": "Set Sport Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://ad.betcity.ru/d/off/events?rev=6&ver=48&lng=1&csn=ooca9s",
+        "options": {
+          "timeout": 6000
+        }
+      },
+      "id": "9adb1915-f786-4a0d-a6f6-3c51e2f88c88",
+      "name": "Get BetCity Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        -256
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config').item.json;\nconst sportId = config.basketballSportId;\nconst sportName = 'Basketball';\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n  \n  const sport = sports[sid];\n  \n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n      if(evt.fut === 1 || evt.is_stat === 1  || evt.cn_ch === 204051) continue;\n\n      const date = new Date((evt.date_ev * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n      const eventTime = date.toISOString().slice(0, 19);\n      \n      events.push({\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: evt.id_ch_gl,\n        leagueId: evt.cn_ch,\n        league: leagueName,\n        homeId: evt.id_ht,\n        home: evt.name_ht,\n        awayId: evt.id_at,\n        away: evt.name_at,\n        homeCountry: evt.iso_f,\n        awayCountry: evt.iso_s,\n        status: evt.st_ev,\n        future: evt.fut,\n        statistics: evt.is_stat\n      });\n    }\n  }\n}\n\nreturn events;"
+      },
+      "id": "ca681afa-a88d-4b15-aa70-1c589dec0672",
+      "name": "Process Basketball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config').item.json;\nconst sportId = config.volleyballSportId;\nconst sportName = 'Volleyball';\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n  \n  const sport = sports[sid];\n  \n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n      if(evt.fut === 1 || evt.is_stat === 1) continue;\n      \n      const date = new Date((evt.date_ev * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n      const eventTime = date.toISOString().slice(0, 19);\n      \n      events.push({\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: evt.id_ch_gl,\n        leagueId: evt.cn_ch,\n        league: leagueName,\n        homeId: evt.id_ht,\n        home: evt.name_ht,\n        awayId: evt.id_at,\n        away: evt.name_at,\n        homeCountry: evt.iso_f,\n        awayCountry: evt.iso_s,\n        status: evt.st_ev,\n        future: evt.fut,\n        statistics: evt.is_stat\n      });\n    }\n  }\n}\n\nreturn events;"
+      },
+      "id": "c6ffca5a-1b72-4cf4-8a52-2d046e4ef475",
+      "name": "Process Volleyball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://eventcollectingservice.kl.starixuat.com/BetCity/events",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{    JSON.stringify(         {\"events\":$(\"Merge\").all().map(item => item.json)}         ) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        -80
+      ],
+      "id": "a7f00732-a9f2-480f-88fd-85caede9b982",
+      "name": "HTTP Request",
+      "executeOnce": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        -64
+      ],
+      "id": "9af19424-774f-4b98-99cc-95f79b72ba88",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        352,
+        -112
+      ],
+      "id": "9e8b5ccd-fba4-4df6-b357-cd5f54f0a1a8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sport-id-basketball",
+              "name": "basketballSportId",
+              "value": "3",
+              "type": "string"
+            },
+            {
+              "id": "sport-id-volleyball",
+              "name": "volleyballSportId",
+              "value": "12",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5132ffe2-94d8-4bfb-a2b6-5de17cc3208e",
+      "name": "Set Sport Config1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config1').item.json;\nconst sportId = config.basketballSportId;\nconst sportName = 'Basketball';\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n  \n  const sport = sports[sid];\n  \n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n    if(championship.is_stat === 1) continue;\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n      if(evt.fut === 1 || evt.is_stat === 1 || evt.id_ch_gl === 13583) continue;\n\n      const date = new Date((evt.date_ev * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n      const eventTime = date.toISOString().slice(0, 19).replace('T', ' ');\n      \n      events.push({\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: evt.id_ch_gl,\n        leagueId: evt.cn_ch,\n        league: leagueName,\n        homeId: evt.id_ht,\n        home: evt.name_ht,\n        awayId: evt.id_at,\n        away: evt.name_at,\n        homeCountry: evt.iso_f,\n        awayCountry: evt.iso_s,\n        status: evt.st_ev,\n        future: evt.fut,\n        statistics: evt.is_stat\n      });\n    }\n  }\n}\n\nreturn events;"
+      },
+      "id": "2094afe3-9efa-4fe2-a6e5-f7856e2d3d3b",
+      "name": "Process Basketball1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config1').item.json;\nconst sportId = config.volleyballSportId;\nconst sportName = 'Volleyball';\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n  \n  const sport = sports[sid];\n  \n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n    if(championship.is_stat === 1) continue;\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n      if(evt.fut === 1 || evt.is_stat === 1) continue;\n      \n      const date = new Date((evt.date_ev * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n      const eventTime = date.toISOString().slice(0, 19).replace('T', ' ');\n      \n      events.push({\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: evt.id_ch_gl,\n        leagueId: evt.cn_ch,\n        league: leagueName,\n        homeId: evt.id_ht,\n        home: evt.name_ht,\n        awayId: evt.id_at,\n        away: evt.name_at,\n        homeCountry: evt.iso_f,\n        awayCountry: evt.iso_s,\n        status: evt.st_ev,\n        future: evt.fut,\n        statistics: evt.is_stat\n      });\n    }\n  }\n}\n\nreturn events;"
+      },
+      "id": "45453b97-c838-47c9-ba0a-499128ef6aa4",
+      "name": "Process Volleyball1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://ad.betcity.ru/d/on_air/events?rev=5&ver=51&lng=1&csn=ooca9s",
+        "options": {
+          "timeout": 6000
+        }
+      },
+      "id": "f6e9695b-1928-44a5-8e6b-989c89facedf",
+      "name": "Get BetCity Event From Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        80
+      ],
+      "retryOnFail": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Sport Config": {
+      "main": [
+        [
+          {
+            "node": "Get BetCity Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get BetCity Event": {
+      "main": [
+        [
+          {
+            "node": "Process Basketball",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Basketball": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Sport Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Sport Config1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Sport Config1": {
+      "main": [
+        [
+          {
+            "node": "Get BetCity Event From Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get BetCity Event From Result": {
+      "main": [
+        [
+          {
+            "node": "Process Basketball1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Volleyball1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Basketball1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Process Volleyball1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "20c03b15-94aa-471c-a262-fd89f1e718a1",
+  "meta": {
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "jM1yiOrhhbVb3tY5",
+  "tags": [
+    {
+      "createdAt": "2025-10-23T13:54:40.543Z",
+      "updatedAt": "2025-10-23T13:54:40.543Z",
+      "id": "RvOFIwcLebLy0ZDH",
+      "name": "Volleyball"
+    },
+    {
+      "createdAt": "2025-10-23T13:54:29.120Z",
+      "updatedAt": "2025-10-23T13:54:29.120Z",
+      "id": "YnzF6UiH2lPOpiwj",
+      "name": "Basketball"
+    },
+    {
+      "createdAt": "2025-10-22T06:39:44.591Z",
+      "updatedAt": "2025-10-22T06:39:44.591Z",
+      "id": "fO55yy2m5Cs6Z9j7",
+      "name": "BetCity"
+    }
+  ]
+}
