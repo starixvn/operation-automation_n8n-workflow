@@ -131,7 +131,7 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "[\n  {\n    \"eventId\": 123123,\n    \"leagueName\": \"Primera A\",\n    \"homeTeamName\": \"Libertad\",\n    \"awayTeamName\": \"Independiente Valle\",\n    \"channel\": \"Stadium Feed\",\n    \"kickoffTime\": \"2025-11-04T08:00:00.000Z\",\n    \"alive\": true,\n    \"status\": true\n  },\n  {\n    \"eventId\": 23412431,\n    \"leagueName\": \"Superliga\",\n    \"homeTeamName\": \"Banfield\",\n    \"awayTeamName\": \"Lanús\",\n    \"channel\": \"Stadium Feed\",\n    \"kickoffTime\": \"2025-11-04T08:15:00.000Z\",\n    \"alive\": true,\n    \"status\": true\n  }\n]",
+        "jsonSchemaExample": "[\n  {\n  \"leagueName\": \"Gulf Club Champions League\",\n  \"country\": \"Gulf Region\"\n  },\n  {\n  \"leagueName\": \"Gulf Club Champions League\",\n  \"country\": \"Gulf Region\"\n  }\n]",
         "autoFix": true
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
@@ -149,14 +149,14 @@
         "text": "={{ $json.events }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are given match records in JSON format, each containing the following fields:\nleagueName, homeTeamName, and awayTeamName.\n\nYour task is to validate and correct the leagueName by identifying the accurate league or competition associated with the given teams.\n\nRules:\n\t1.\tFor each match row, use the homeTeamName、awayTeamName and leagueName to determine the correct league name, including the country and division level., e.g.\n\t•\t\"Brazil Serie A\"\n\t•\t\"Japan J3 League\"\n\t•\t\"Russia First League\"\n\t2.\tIf both teams belong to the same domestic league, replace the leagueName field with that league’s full name (including country and tier).\n\t3.\tIf the match belongs to a cup, continental, or international competition, detect and fill in the correct tournament name (e.g.\n\t•\t\"UEFA Women’s Champions League\",\n\t•\t\"Copa Colombia\",\n\t•\t\"FIFA U20 World Cup\",\n\t•\t\"Copa Sudamericana\").\n\t4.\tIf no clear league association can be determined, keep the original leagueName value."
+          "systemMessage": "You are a Soccer League Identification Agent.\n\nYour goal:\nGiven a match record with `leagueName`, `homeTeamName`, `awayTeamName`, and `kickoffTime`,\ndetermine the accurate and official **league or competition name**, including the **country or region** where it belongs.\n\nYou should use your knowledge of world football leagues and tournaments,\nand verify by searching reliable web sources such as ESPN, Sofascore, Flashscore, or Wikipedia.\n\n---\n\n### Rules\n\n1. If both teams belong to the same domestic league, replace `leagueName` with that league’s full name and include the country and tier level.\n   - Examples:\n     - \"Brazil Serie A\"\n     - \"Japan J3 League\"\n     - \"England Championship\"\n     - \"Russia First League\"\n\n2. If the match is part of a **cup or international tournament**, return the official tournament name:\n   - Examples:\n     - \"UEFA Champions League\"\n     - \"AFC Champions League\"\n     - \"FIFA U20 World Cup\"\n     - \"Copa Sudamericana\"\n     - \"Gulf Club Champions League\"\n\n3. Always include the `country` or `region` field that identifies where the competition belongs.\n   - e.g. `\"country\": \"England\"`, `\"country\": \"Qatar\"`, `\"country\": \"South America\"`\n\n4. Use the \"kickoffTime\" to ensure the correct season or tournament edition if multiple leagues exist.\n\n5. If you cannot confidently determine the correct league, **keep the original leagueName** unchanged."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
         -16,
-        176
+        160
       ],
       "id": "b677178b-a021-413a-bef6-555dcdc21980",
       "name": "AI Agent",
@@ -189,7 +189,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $('Loop Over Items').first().json.events;   // 或直接你的原資料\nconst fake = $input.first().json.output;     // 另一組要用來\nconst result = {\n  output: input.map((item, index) => ({\n    ...item,\n    leagueName: fake[index]?.leagueName || item.leagueName\n  }))\n};\n\nreturn result;"
+        "jsCode": "const input = $('Loop Over Items').first().json.events;   // 原始資料\nconst fake = $input.first().json.output;                   // 模型輸出結果\n\nconst result = {\n  output: input.map((item, index) => {\n    const country = fake[index]?.country || \"\";\n    const league = item.leagueName;\n    const joinedLeague = country ? `${country} ${league}` : league;\n\n    return {\n      ...item,\n      leagueName: joinedLeague\n    };\n  })\n};\n\nreturn result;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -410,8 +410,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c65b8513-7062-4f52-8ff1-a2dcafcb44bb",
+  "versionId": "21533a6f-84e8-4e06-830a-dc08fc0b0446",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
   },
   "id": "E1ib9Y7V7XyK6BXa",
