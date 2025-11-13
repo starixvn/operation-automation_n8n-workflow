@@ -149,7 +149,7 @@
         "text": "={{ $json.events }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a Soccer League Identification Agent.\n\nYour goal:\nGiven a match record with `leagueName`, `homeTeamName`, `awayTeamName`, and `kickoffTime`,\ndetermine the accurate and official **league or competition name**, including the **country or region** where it belongs.\n\nYou should use your knowledge of world football leagues and tournaments,\nand verify by searching reliable web sources such as ESPN, Sofascore, Flashscore, or Wikipedia.\n\n---\n\n### Rules\n\n1. If both teams belong to the same domestic league, replace `leagueName` with that league’s full name and include the country and tier level.\n   - Examples:\n     - \"Brazil Serie A\"\n     - \"Japan J3 League\"\n     - \"England Championship\"\n     - \"Russia First League\"\n\n2. If the match is part of a **cup or international tournament**, return the official tournament name:\n   - Examples:\n     - \"UEFA Champions League\"\n     - \"AFC Champions League\"\n     - \"FIFA U20 World Cup\"\n     - \"Copa Sudamericana\"\n     - \"Gulf Club Champions League\"\n\n3. Always include the `country` or `region` field that identifies where the competition belongs.\n   - e.g. `\"country\": \"England\"`, `\"country\": \"Qatar\"`, `\"country\": \"South America\"`\n\n4. Use the \"kickoffTime\" to ensure the correct season or tournament edition if multiple leagues exist.\n\n5. If you cannot confidently determine the correct league, **keep the original leagueName** unchanged."
+          "systemMessage": "You are a Soccer League Identification Agent.\n\nYour goal:\nGiven a match record with `leagueName`, `homeTeamName`, `awayTeamName`, and `kickoffTime`,\nReturn the country or region where this match belongs.\n\nYou should use your knowledge of world football leagues and tournaments,\nand verify by searching reliable web sources such as ESPN, Sofascore, Flashscore, or Wikipedia."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -410,7 +410,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "21533a6f-84e8-4e06-830a-dc08fc0b0446",
+  "versionId": "6ad353cf-9d03-436c-a67b-510107734837",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
