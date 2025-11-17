@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 8 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 1);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
+        "jsCode": "const today = new Date();\n\n// ➕ 8 小時\nconst todayPlus8 = new Date(today.getTime() + 8 * 60 * 60 * 1000);\n\n// 明天\nconst tomorrow = new Date();\ntomorrow.setDate(todayPlus8.getDate() + 4);\n\n// 格式化 yyyy-mm-dd\nfunction formatYYYYMMDD(date) {\n  return date.toISOString().split(\"T\")[0];\n}\n\n// 格式化 dd/mm/yyyy\n\n// 四個結果\nconst result = {\n  today_ymd: formatYYYYMMDD(todayPlus8),       // 2025-09-17 (UTC+8 後的日期)\n  tomorrow_ymd: formatYYYYMMDD(tomorrow),      // 2025-09-18\n};\n\n// 回傳給 n8n\nreturn [{ json: result }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -406,11 +406,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6ad353cf-9d03-436c-a67b-510107734837",
+  "versionId": "e4788d46-42ef-4125-95f9-fcdc16c93c4c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
