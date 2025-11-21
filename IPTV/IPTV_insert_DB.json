@@ -49,7 +49,7 @@
           "parameters": [
             {
               "name": "events",
-              "value": "={{ $json.output }}"
+              "value": "={{ $json.events }}"
             }
           ]
         },
@@ -58,7 +58,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        560,
+        176,
         176
       ],
       "id": "889069d4-8180-4cf6-9a6b-c8628646bd35",
@@ -107,7 +107,7 @@
       "typeVersion": 2,
       "position": [
         0,
-        0
+        -16
       ],
       "id": "393edf08-1f37-494a-a5c6-8c823b867944",
       "name": "End"
@@ -128,77 +128,6 @@
       ],
       "id": "9baff658-9da8-4671-b458-843af856835d",
       "name": "Schedule Trigger"
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "[\n  {\n  \"leagueName\": \"Gulf Club Champions League\",\n  \"country\": \"Gulf Region\"\n  },\n  {\n  \"leagueName\": \"Gulf Club Champions League\",\n  \"country\": \"Gulf Region\"\n  }\n]",
-        "autoFix": true
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        208,
-        368
-      ],
-      "id": "a3cc7a7f-ad87-463c-a77f-d785e901f5d1",
-      "name": "Structured Output Parser"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.events }}",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "You are a Soccer League Identification Agent.\n\nYour goal:\nGiven a match record with `leagueName`, `homeTeamName`, `awayTeamName`, and `kickoffTime`,\nReturn the country or region where this match belongs.\n\nYou should use your knowledge of world football leagues and tournaments,\nand verify by searching reliable web sources such as ESPN, Sofascore, Flashscore, or Wikipedia."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        -16,
-        160
-      ],
-      "id": "b677178b-a021-413a-bef6-555dcdc21980",
-      "name": "AI Agent",
-      "retryOnFail": true,
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-4.1-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -96,
-        400
-      ],
-      "id": "ff1c23a9-482a-4106-a8ae-3c23cbaa7533",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "I3qp7DIrbnOMJskH",
-          "name": "CTO-DS"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const input = $('Loop Over Items').first().json.events;   // 原始資料\nconst fake = $input.first().json.output;                   // 模型輸出結果\n\nconst result = {\n  output: input.map((item, index) => {\n    const country = fake[index]?.country || \"\";\n    const league = item.leagueName;\n    const joinedLeague = country ? `${country} ${league}` : league;\n\n    return {\n      ...item,\n      leagueName: joinedLeague\n    };\n  })\n};\n\nreturn result;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        336,
-        176
-      ],
-      "id": "609f4afa-8fb6-426f-b5c0-275bcb2382ca",
-      "name": "Intergate"
     },
     {
       "parameters": {
@@ -265,7 +194,7 @@
         ],
         [
           {
-            "node": "AI Agent",
+            "node": "Update into DB",
             "type": "main",
             "index": 0
           }
@@ -327,55 +256,6 @@
         ]
       ]
     },
-    "Structured Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Intergate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Structured Output Parser",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Intergate": {
-      "main": [
-        [
-          {
-            "node": "Update into DB",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "If": {
       "main": [
         [
@@ -406,11 +286,11 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e4788d46-42ef-4125-95f9-fcdc16c93c4c",
+  "versionId": "1de66743-b7c6-44e6-935f-95e46b49e55e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
