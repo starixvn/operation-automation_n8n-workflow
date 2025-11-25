@@ -26,7 +26,7 @@
             },
             {
               "name": "Cookie",
-              "value": "uid1=AAAACmjyTcNPHEr2BG/sAg==; _pk_ses.1.705a=*; _ga=GA1.2.1617544798.1760710090; _gid=GA1.2.785044185.1760710090; uid2=1761317170_abdc9bcd3cdc23fd5bcf25139fcd8ff2; _pk_id.1.705a=891e91aba52349fb.1760710090.1.1760712769.1760710090.; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1760710091$o1$g1$t1760712769$j60$l0$h0"
+              "value": "uid1=AAAACmkWy+gQwU7FBXzVAg==; _ga=GA1.2.1246703819.1763101674; _pk_ref.1.705a=%5B%22%22%2C%22%22%2C1763983948%2C%22https%3A%2F%2Fwww.google.com%2F%22%5D; _pk_ses.1.705a=*; _gid=GA1.2.302845992.1763983949; _ga_P3PS8LPV3Y=GS2.2.s1763983950$o7$g1$t1763984007$j3$l0$h0; _gat_f24=1; _pk_id.1.705a=d19298292ac41166.1763101674.8.1763984020.1763983948."
             }
           ]
         },
@@ -50,7 +50,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 取得輸入資料\nconst data = $('XML to Json').first().json;\n// 展開所有比賽並只提取需要的欄位\nconst output = [];\n\n// 建立 league ID 到完整 league info 的映射\nconst leagueMap = {};\nconst eventStatusMap = {};\n\nif (data.F24?.Kraje?.K && Array.isArray(data.F24.Kraje.K)) {\n  data.F24.Kraje.K.forEach(country => {\n    const countryName = country.KN || '';\n    \n    // 處理 L 可能是陣列或單一物件的情況\n    const leagues = Array.isArray(country.L) ? country.L : [country.L];\n    \n    leagues.forEach(league => {\n      if (league?.LId && league?.LN) {\n        // 儲存主聯賽資訊\n        leagueMap[league.LId] = {\n          country: countryName,\n          league: league.LN,\n          subLeague: ''\n        };\n        \n        // 處理子聯賽 (PL 可能是陣列或單一物件)\n        if (league.PL) {\n          const subLeagues = Array.isArray(league.PL) ? league.PL : [league.PL];\n          \n          subLeagues.forEach(subLeague => {\n            if (subLeague?.LId && subLeague?.LN) {\n              leagueMap[subLeague.LId] = {\n                country: countryName,\n                league: league.LN,\n                subLeague: subLeague.LN\n              };\n            }\n          });\n        }\n      }\n    });\n  });\n}\n\n// 建立 match ID 到 event status 的映射\nif (data.F24?.Zd?.Z && Array.isArray(data.F24.Zd.Z)) {\n  data.F24.Zd.Z.forEach(eventStatus => {\n    if (eventStatus.MId && eventStatus.CM) {\n      const matchId = eventStatus.MId;\n      const eventInfo = eventStatus.CM;\n      \n      // 直接覆蓋，最後一個會保留\n      eventStatusMap[matchId] = eventInfo;\n    }\n  });\n} // ✅ 只要一個 }\n\n// 檢查並展開 Mecze 陣列\nif (data.F24?.Mecze?.M && Array.isArray(data.F24.Mecze.M)) {\n  data.F24.Mecze.M.forEach(match => {\n    var eventTimeStamp = match.C0 || '';\n    const date = new Date((eventTimeStamp * 1000) + (8 * 60 * 60 * 1000));\n    const eventDate = date.toISOString().split('T')[0];\n    const eventTime = date.toISOString().slice(0, 19);\n    \n    // 優先使用 LId (子聯賽),如果沒有則使用 _LId (主聯賽)\n    const leagueId = match.LId || match._LId || '';\n    const leagueInfo = leagueMap[leagueId] || { country: '', league: '', subLeague: '' };\n    \n    output.push({\n      json: {\n        Cid: match.KId,\n        CName: leagueInfo.country || '',\n        MId: match.MId || '',\n        EventDate: eventDate,\n        EventTime: eventTime,\n        PLeagueId: match._LId,\n        LeagueId: match.LId,\n        PLeagueName: leagueInfo.league || \"\",\n        LeagueName: leagueInfo.subLeague || \"\",\n        HomeId: match.HId,\n        HomeName: match.HN || '',\n        AwayId: match.GId,\n        AwayName: match.GN || '',\n        EventStatus: match.MStan,\n        FScore: match.S1 || '',\n        HScore: match.S2 || '',\n        HRedCard: match.HRCi || '',\n        ARedCard: match.GRCi || '',\n      }\n    });\n  });\n}\n\nreturn output;"
+        "jsCode": "// 取得輸入資料\nconst allData = $('XML to Json').all();\n// 展開所有比賽並只提取需要的欄位\nconst output = [];\n\nallData.forEach( item=>{\n    const data = item.json;\n  // 建立 league ID 到完整 league info 的映射\nconst leagueMap = {};\nconst eventStatusMap = {};\n\nif (data.F24?.Kraje?.K && Array.isArray(data.F24.Kraje.K)) {\n  data.F24.Kraje.K.forEach(country => {\n    const countryName = country.KN || '';\n    \n    // 處理 L 可能是陣列或單一物件的情況\n    const leagues = Array.isArray(country.L) ? country.L : [country.L];\n    \n    leagues.forEach(league => {\n      if (league?.LId && league?.LN) {\n        // 儲存主聯賽資訊\n        leagueMap[league.LId] = {\n          country: countryName,\n          league: league.LN,\n          subLeague: ''\n        };\n        \n        // 處理子聯賽 (PL 可能是陣列或單一物件)\n        if (league.PL) {\n          const subLeagues = Array.isArray(league.PL) ? league.PL : [league.PL];\n          \n          subLeagues.forEach(subLeague => {\n            if (subLeague?.LId && subLeague?.LN) {\n              leagueMap[subLeague.LId] = {\n                country: countryName,\n                league: league.LN,\n                subLeague: subLeague.LN\n              };\n            }\n          });\n        }\n      }\n    });\n  });\n}\n\n// 建立 match ID 到 event status 的映射\nif (data.F24?.Zd?.Z && Array.isArray(data.F24.Zd.Z)) {\n  data.F24.Zd.Z.forEach(eventStatus => {\n    if (eventStatus.MId && eventStatus.CM) {\n      const matchId = eventStatus.MId;\n      const eventInfo = eventStatus.CM;\n      \n      // 直接覆蓋，最後一個會保留\n      eventStatusMap[matchId] = eventInfo;\n    }\n  });\n} // ✅ 只要一個 }\n\n// 檢查並展開 Mecze 陣列\nif (data.F24?.Mecze?.M && Array.isArray(data.F24.Mecze.M)) {\n  data.F24.Mecze.M.forEach(match => {\n    var eventTimeStamp = match.C0 || '';\n    const date = new Date((eventTimeStamp * 1000));\n    const eventDate = date.toISOString().split('T')[0];\n    const eventTime = date.toISOString().slice(0, 19);\n    \n    // 優先使用 LId (子聯賽),如果沒有則使用 _LId (主聯賽)\n    const leagueId = match.LId || match._LId || '';\n    const leagueInfo = leagueMap[leagueId] || { country: '', league: '', subLeague: '' };\n    \n    output.push({\n      json: {\n        Cid: match.KId,\n        CName: leagueInfo.country || '',\n        MId: match.MId || '',\n        EventDate: eventDate,\n        EventTime: eventTime,\n        PLeagueId: match._LId,\n        LeagueId: match.LId,\n        PLeagueName: leagueInfo.league || \"\",\n        LeagueName: leagueInfo.subLeague || \"\",\n        HomeId: match.HId,\n        HomeName: match.HN || '',\n        AwayId: match.GId,\n        AwayName: match.GN || '',\n        EventStatus: match.MStan,\n        FScore: match.S1 || '',\n        HScore: match.S2 || '',\n        HRedCard: match.HRCi || '',\n        ARedCard: match.GRCi || '',\n      }\n    });\n  });\n}\n})\n\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -83,7 +83,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 14 days\nfor (let i = 0; i < 2; i++) {\n  const date = new Date(today);\n  date.setDate(today.getDate() + i);\n  urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n}\n\n// Add live now URL\nurls.push('https://p.futbol24.com/f24/u/liveNow_15.xml');\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
+        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 14 days\n// for (let i = 0; i < 2; i++) {\n//   const date = new Date(today);\n//   date.setDate(today.getDate() + i);\n//   urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n// }\n\n// Add live now URL\nurls.push('https://p.futbol24.com/f24/u/liveNow_15.xml');\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -110,15 +110,24 @@
       "name": "Sticky Note"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
       "position": [
-        -912,
+        -944,
         -144
       ],
-      "id": "7af8d5ab-c88c-4e21-b179-5ce8d2f74d5a",
-      "name": "When clicking ‘Execute workflow’"
+      "id": "dd080e58-ec95-46e0-8c6f-1219a1b703cf",
+      "name": "Schedule Trigger"
     }
   ],
   "pinData": {},
@@ -167,7 +176,7 @@
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
+    "Schedule Trigger": {
       "main": [
         [
           {
@@ -179,11 +188,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "4be02b7d-d749-4d23-b657-0624a71ab20b",
+  "versionId": "61a5913e-e21c-4d03-b079-55244ebe8c4c",
   "meta": {
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
   },
