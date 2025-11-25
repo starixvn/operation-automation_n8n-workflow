@@ -1,0 +1,1640 @@
+{
+  "name": "BetCity - Result",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sport-id-basketball",
+              "name": "basketballSportId",
+              "value": "3",
+              "type": "string"
+            },
+            {
+              "id": "sport-id-volleyball",
+              "name": "volleyballSportId",
+              "value": "12",
+              "type": "string"
+            },
+            {
+              "id": "3e86a519-5693-4ce2-b469-6074f32a33ee",
+              "name": "soccerSportId",
+              "value": "1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b766cfb2-f1ad-4bbf-9bf2-363b6f96aa68",
+      "name": "Set Sport Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://ad.betcity.ru/d/score?rev=5&date={{$json.date}}&ver=60&lng=1&csn=ooca9s ",
+        "options": {
+          "timeout": 6000
+        }
+      },
+      "id": "bb4908c6-e4b3-4d95-83b4-a026f287a16f",
+      "name": "Get BetCity Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -256,
+        48
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config').item.json;\nconst sportId = config.basketballSportId;\nconst sportName = 'Basketball';\n\n// 籃球所有常見專屬賽事事件欄位 keyMap\nconst keyMap = {\n  \"First to score points\": \"firstToScore\",\n  \"20 points race (3rd quarter)\": \"race20Q3\",\n  \"100 points race\": \"race100\",\n  \"75 points race\": \"race75\",\n  \"50 points race\": \"race50\",\n};\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n\n  const sport = sports[sid];\n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n\n    if (!championship.name_ch || championship.name_ch.includes('Cyberbasketball.') || championship.name_ch.includes('stats.') || championship.name_ch.includes('Stats.') || championship.name_ch.includes('statistics.')) continue; // skip Cyberfootball\n    // 刪去 sportName 前綴，取得 leagueName\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n\n      // 時間修正\n      const date = new Date(evt.date_ev.replace(\" \", \"T\") + \"Z\");\n      date.setHours(date.getHours() + 8);\n      const eventDate = date.toISOString().slice(0, 10);\n      const eventTime = date.toISOString().slice(0, 19).replace('T', ' ');\n\n      // 初始化籃球欄位（全部專用欄位清空）\n      const event = {\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: championship.id_ch,\n        leagueId: championship.cn_ch,\n        league: leagueName,\n        islive: evt.hasOwnProperty('is_live') ? evt.is_live : '0',\n        home: evt.name_ht,\n        away: evt.name_at,\n        q1score: '',  \n        q2score: '',  \n        q3score: '',  \n        q4score: '',  \n        ot1Score: '',\n        ot2Score: '',\n        ot3Score: '',\n        finalscore: evt.sc_ev,\n        ...Object.keys(keyMap).reduce((acc, k) => { acc[keyMap[k]] = ''; return acc; }, {}),\n      };\n      \n      // 處理四節分數\n      if (evt.sc_ext_ev) {\n        const periods = evt.sc_ext_ev.split(',');\n        event.q1score = periods[0] ? periods[0].trim() : '';\n        event.q2score = periods[1] ? periods[1].trim() : '';\n        event.q3score = periods[2] ? periods[2].trim() : '';\n        event.q4score = periods[3] ? periods[3].trim() : '';\n        // 如果有 (OT) 欄位，延長賽分數往後排\n        if (evt.sc_com_ev && evt.sc_com_ev.trim() === '(OT)') {\n          if(periods.length === 3)\n          {\n            event.q3score = '';\n            event.q4score = '';\n            event.ot1Score = periods[2] ? periods[2].trim() : '';\n          }\n          else\n          {\n             // periods[4] 之後都是延長賽分數\n            for (let i = 4; i < periods.length; i++) {\n              event[`ot${i - 3}Score`] = periods[i] ? periods[i].trim() : '';\n            }\n          }\n        }\n      }\n\n      // ext 部分根據 name_ext 對應 keyMap，直接塞 value_ext\n      if (Array.isArray(evt.ext)) {\n        evt.ext.forEach(extItem => {\n          const simpleKey = keyMap[extItem.name_ext];\n          if (simpleKey) {\n            event[simpleKey] = extItem.value_ext;\n          }\n        });\n      }\n\n      events.push(event);\n    }\n  }\n}\nreturn events;\n"
+      },
+      "id": "b7a25044-985e-44a5-a6c8-82a2e48db5b8",
+      "name": "Process Basketball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        288,
+        768
+      ],
+      "id": "250a0afb-ce67-40e7-bed1-38091f622e8e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 3
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        48
+      ],
+      "id": "52498f95-f314-4290-a24a-b8698c19f0d8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config').item.json;\nconst sportId = config.soccerSportId;\nconst sportName = 'Soccer';\nconst keyMap = {\n  \"Penalty\": \"penalty\",\n  \"Red card\": \"redCard\",\n  \"First penalty scored by\": \"firstPenaltyScorer\",\n  \"First goal in 1st half\": \"firstGoalFirstHalf\",\n  \"First goal in 2nd half\": \"firstGoalSecondHalf\",\n  \"Penalty in the 1st half\": \"penaltyFirstHalf\",\n  \"Penalty in the 2nd half\": \"penaltySecondHalf\",\n  \"Both teams will shoot a penalty\": \"bothTeamsPenalty\",\n  \"Red card in the 1st half\": \"redCardFirstHalf\",\n  \"Red card in the 2nd half\": \"redCardSecondHalf\",\n  \"Goalkeeper to get red card\": \"goalkeeperRedCard\",\n  \"Penalty missed in the match\": \"penaltyMissed\",\n  \"Penalty scored in the match\": \"penaltyScored\",\n  \"Penalty given/confirmed after video review\": \"penaltyVAR\",\n  \"Red card in both teams\": \"redCardBothTeams\",\n  \"To score from 1 to 10 min\": \"scoreFirst10Min\",\n  \"Aruba first penalty\": \"arubaFirstPenalty\",\n  \"1st goal (min)\": \"firstGoalMin\",\n  \"1st goal\": \"firstGoal\",\n  \"2nd goal (min)\": \"secondGoalMin\",\n  \"Total penalties\": \"totalPenalties\",\n  \"Goal scored in x-y minutes\": \"goalInTimeRange\",\n  \"2 goals in a row by one team\": \"twoGoalsInRow\",\n  \"To score 3 goals in a row\": \"threeGoalsInRow\"\n};\nconst events = [];\nconst sports = inputData.reply.sports;\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n  \n  const sport = sports[sid];\n  \n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n    if (!championship.name_ch || championship.name_ch.includes('Cyberfootball.') || championship.name_ch.includes('Statistics.') || championship.name_ch.includes('statistics.')) continue; \n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n      \n      if(evt.cn_ch === 204051) continue;\n      const date = new Date(evt.date_ev.replace(\" \", \"T\") + \"Z\");\n      date.setHours(date.getHours() + 8); // 加8小時\n      const eventDate = date.toISOString().slice(0,10);\n      const eventTime = date.toISOString().slice(0,19).replace('T', ' ');\n      const event = {\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: championship.id_ch,\n        leagueId: championship.cn_ch,\n        league: leagueName,\n        islive: evt.hasOwnProperty('is_live') ? evt.is_live : '0',\n        home: evt.name_ht,\n        away: evt.name_at,\n        halfscore: evt.sc_ext_ev,\n        finalscore: evt.sc_ev,\n        ...Object.keys(keyMap).reduce((acc, k) => { acc[keyMap[k]] = ''; return acc; }, {}),\n      };\n      if (Array.isArray(evt.ext)) {\n          evt.ext.forEach(extItem => {\n            const simpleKey = keyMap[extItem.name_ext];\n            if (simpleKey) {\n              event[simpleKey] = extItem.value_ext;\n            }\n          });\n      }\n      \n      events.push(event);\n    }\n  }\n}\nreturn events;"
+      },
+      "id": "b9b44b7f-5da7-482b-b88f-a64e6166e7df",
+      "name": "Process Soccer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}-${month}-${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\nreturn { date: formatDate(today)}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        48
+      ],
+      "id": "d2be871c-86e2-4ffa-a1f1-97ba7e4c0eb8",
+      "name": "Get Web Url"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 方法 2: 如果需要處理所有輸入項目\nconst allEvents = $input.all();\n\nconst events = allEvents.flatMap(item => item.json);\n\n// Group by eventDate\nconst groupedByDate = events.reduce((acc, event) => {\n  if (!acc[event.eventDate]) {\n    acc[event.eventDate] = [];\n  }\n  acc[event.eventDate].push(event);\n  return acc;\n}, {});\n\n// Convert to array format\nconst result = Object.keys(groupedByDate).map(date => ({\n  eventDate: date,\n  events: groupedByDate[date]\n}));\n\nreturn result;"
+      },
+      "id": "0b4edc25-e62b-481d-81c4-0587f1da0c1b",
+      "name": "Group by Soccer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        -304
+      ],
+      "id": "51fcf3b1-ef63-40a8-8097-bf32c14708e2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7f2e82eb-9555-4f6a-aa99-96122baadce6",
+      "name": "Loop Events",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        -432
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "title": "=BCSC-{{ $json.eventDate }}",
+        "options": {}
+      },
+      "id": "7c0af090-ffbc-45b9-83d5-5dd36483307a",
+      "name": "Create Sheet - Soccer",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        -288
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=BCSC-{{ $json.eventDate }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "eventId"
+          ],
+          "schema": [
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "eventDate",
+              "displayName": "eventDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "eventDateTime",
+              "displayName": "eventDateTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "leagueGroupId",
+              "displayName": "leagueGroupId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "leagueId",
+              "displayName": "leagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "league",
+              "displayName": "league",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "islive",
+              "displayName": "islive",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "home",
+              "displayName": "home",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "away",
+              "displayName": "away",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "halfscore",
+              "displayName": "halfscore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "finalscore",
+              "displayName": "finalscore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penalty",
+              "displayName": "penalty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "redCard",
+              "displayName": "redCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstPenaltyScorer",
+              "displayName": "firstPenaltyScorer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstGoalFirstHalf",
+              "displayName": "firstGoalFirstHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstGoalSecondHalf",
+              "displayName": "firstGoalSecondHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penaltyFirstHalf",
+              "displayName": "penaltyFirstHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penaltySecondHalf",
+              "displayName": "penaltySecondHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bothTeamsPenalty",
+              "displayName": "bothTeamsPenalty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "redCardFirstHalf",
+              "displayName": "redCardFirstHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "redCardSecondHalf",
+              "displayName": "redCardSecondHalf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "goalkeeperRedCard",
+              "displayName": "goalkeeperRedCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penaltyMissed",
+              "displayName": "penaltyMissed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penaltyScored",
+              "displayName": "penaltyScored",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "penaltyVAR",
+              "displayName": "penaltyVAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "redCardBothTeams",
+              "displayName": "redCardBothTeams",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scoreFirst10Min",
+              "displayName": "scoreFirst10Min",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "arubaFirstPenalty",
+              "displayName": "arubaFirstPenalty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstGoalMin",
+              "displayName": "firstGoalMin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstGoal",
+              "displayName": "firstGoal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "secondGoalMin",
+              "displayName": "secondGoalMin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalPenalties",
+              "displayName": "totalPenalties",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "goalInTimeRange",
+              "displayName": "goalInTimeRange",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "twoGoalsInRow",
+              "displayName": "twoGoalsInRow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "threeGoalsInRow",
+              "displayName": "threeGoalsInRow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "958f9a0b-92f7-43f9-b7bc-0e3dfa8bd254",
+      "name": "Append To Sheet - Soccer",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        -416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Group by Soccer').all();"
+      },
+      "id": "5b11a847-36bd-4a6c-870c-a6e797c8ac8f",
+      "name": "Get Event - Soccer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -432
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.events;"
+      },
+      "id": "2a62978f-6d35-47fc-b102-1a44139d657f",
+      "name": "Extract Event - Soccer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 方法 2: 如果需要處理所有輸入項目\nconst allEvents = $input.all();\n\nconst events = allEvents.flatMap(item => item.json);\n\n// Group by eventDate\nconst groupedByDate = events.reduce((acc, event) => {\n  if (!acc[event.eventDate]) {\n    acc[event.eventDate] = [];\n  }\n  acc[event.eventDate].push(event);\n  return acc;\n}, {});\n\n// Convert to array format\nconst result = Object.keys(groupedByDate).map(date => ({\n  eventDate: date,\n  events: groupedByDate[date]\n}));\n\nreturn result;"
+      },
+      "id": "5ff4c973-1f06-49bd-8d55-f5396e241e73",
+      "name": "Group by Basketball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        48
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        48
+      ],
+      "id": "8f7ec0c8-5456-4c71-82b2-eac4d66c8706",
+      "name": "Loop Over Items - Basketball"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Group by Basketball').all();"
+      },
+      "id": "18216895-9f86-4a0b-9148-de8c621fb346",
+      "name": "Get Event - Basketball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "title": "=BCBK-{{ $json.eventDate }}",
+        "options": {}
+      },
+      "id": "4b3dbd63-71fa-403e-954f-2d6e230d7ba3",
+      "name": "Create Sheet - Basketball",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        64
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e4d6c8a4-51f7-4d37-8593-64b38dfe3cf3",
+      "name": "Loop Events - Basketball",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.events;"
+      },
+      "id": "2da810f3-dcfd-490b-a5ae-99ce24e0aa8d",
+      "name": "Extract Event - Basketball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=BCBK-{{ $json.eventDate }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "eventId"
+          ],
+          "schema": [
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "eventDate",
+              "displayName": "eventDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "eventDateTime",
+              "displayName": "eventDateTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "leagueGroupId",
+              "displayName": "leagueGroupId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "leagueId",
+              "displayName": "leagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "league",
+              "displayName": "league",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "islive",
+              "displayName": "islive",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "home",
+              "displayName": "home",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "away",
+              "displayName": "away",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q1score",
+              "displayName": "q1score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q2score",
+              "displayName": "q2score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q3score",
+              "displayName": "q3score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q4score",
+              "displayName": "q4score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ot1Score",
+              "displayName": "ot1Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ot2Score",
+              "displayName": "ot2Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ot3Score",
+              "displayName": "ot3Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "finalscore",
+              "displayName": "finalscore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "firstToScore",
+              "displayName": "firstToScore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "race20Q3",
+              "displayName": "race20Q3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "race100",
+              "displayName": "race100",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "race75",
+              "displayName": "race75",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "race50",
+              "displayName": "race50",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "c444b3ab-902a-4137-8fc6-710617b4ee41",
+      "name": "Append To Sheet - Basketball",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        -64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst config = $('Set Sport Config').item.json;\nconst sportId = config.volleyballSportId;\nconst sportName = 'Volleyball';\n\nconst events = [];\nconst sports = inputData.reply.sports;\n\nfor (const sid in sports) {\n  if (sid !== sportId) continue;\n\n  const sport = sports[sid];\n  for (const champId in sport.chmps) {\n    const championship = sport.chmps[champId];\n\n    if (!championship.name_ch || championship.name_ch.includes('stats.', 'Stats.', 'Statistics.', 'statistics.') || championship.cn_ch === 369093 || championship.cn_ch === 369094) continue; // skip \n\n    // 刪去 sportName 前綴，取得 leagueName\n    const leagueName = championship.name_ch.replace(new RegExp(sportName + '\\\\.\\\\s*', 'i'), '').trimStart();\n    for (const eventId in championship.evts) {\n      const evt = championship.evts[eventId];\n\n      //if ((evt.hasOwnProperty('is_live') && evt.is_live === 1)) continue;\n\n      // 時間修正\n      const date = new Date(evt.date_ev.replace(\" \", \"T\") + \"Z\");\n      date.setHours(date.getHours() + 8);\n      const eventDate = date.toISOString().slice(0, 10);\n      const eventTime = date.toISOString().slice(0, 19).replace('T', ' ');\n\n      // 初始化籃球欄位（全部專用欄位清空）\n      const event = {\n        eventId: evt.id_ev,\n        eventDate: eventDate,\n        eventDateTime: eventTime,\n        leagueGroupId: championship.id_ch,\n        leagueId: championship.cn_ch,\n        league: leagueName,\n        islive: evt.hasOwnProperty('is_live') ? evt.is_live : '0',\n        home: evt.name_ht,\n        away: evt.name_at,\n        q1score: '',  \n        q2score: '',  \n        q3score: '',  \n        q4score: '',  \n        q5score: '',  \n        finalscore: evt.sc_ev\n      };\n      \n      // 處理四節分數\n      if (evt.sc_ext_ev) {\n        const periods = evt.sc_ext_ev.split(',');\n        event.q1score = periods[0] ? periods[0].trim() : '';\n        event.q2score = periods[1] ? periods[1].trim() : '';\n        event.q3score = periods[2] ? periods[2].trim() : '';\n        event.q4score = periods[3] ? periods[3].trim() : '';\n        event.q5score = periods[4] ? periods[4].trim() : '';\n      }\n      events.push(event);\n    }\n  }\n}\nreturn events;\n"
+      },
+      "id": "f47b4c9c-028f-4eea-b053-9fd8db9392c6",
+      "name": "Process Volleyball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        416
+      ],
+      "id": "aa5028b0-bc13-49d1-af2f-d6a0bed8f9e0",
+      "name": "Loop Over Items - Volleyball"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "title": "=BCVB-{{ $json.eventDate }}",
+        "options": {}
+      },
+      "id": "e02649d5-468d-4288-b307-571f825d1344",
+      "name": "Create Sheet - Volleyball",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        432
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Group by Volleyball').all();"
+      },
+      "id": "468534ba-e3bd-4e1f-b6d8-7b7667494d8b",
+      "name": "Get Event - Volleyball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "54193f7c-e83c-4464-b920-17ea3e012b18",
+      "name": "Loop Events - Volleyball",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.events;"
+      },
+      "id": "6bfa1cb7-8936-4b95-922b-4c10c7d3822e",
+      "name": "Extract Event - Volleyball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "=186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=BCVB-{{ $json.eventDate }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "eventId"
+          ],
+          "schema": [
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "eventDate",
+              "displayName": "eventDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "eventDateTime",
+              "displayName": "eventDateTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "leagueGroupId",
+              "displayName": "leagueGroupId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "leagueId",
+              "displayName": "leagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "league",
+              "displayName": "league",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "islive",
+              "displayName": "islive",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "home",
+              "displayName": "home",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "away",
+              "displayName": "away",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q1score",
+              "displayName": "q1score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q2score",
+              "displayName": "q2score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q3score",
+              "displayName": "q3score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q4score",
+              "displayName": "q4score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "q5score",
+              "displayName": "q5score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "finalscore",
+              "displayName": "finalscore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "701c500f-5c45-4ffc-bdbe-381998c23b2b",
+      "name": "Append To Sheet - Volleyball",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 方法 2: 如果需要處理所有輸入項目\nconst allEvents = $input.all();\n\nconst events = allEvents.flatMap(item => item.json);\n\n// Group by eventDate\nconst groupedByDate = events.reduce((acc, event) => {\n  if (!acc[event.eventDate]) {\n    acc[event.eventDate] = [];\n  }\n  acc[event.eventDate].push(event);\n  return acc;\n}, {});\n\n// Convert to array format\nconst result = Object.keys(groupedByDate).map(date => ({\n  eventDate: date,\n  events: groupedByDate[date]\n}));\n\nreturn result;"
+      },
+      "id": "d30e369d-b866-45d3-8981-a6833fdeafc7",
+      "name": "Group by Volleyball",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        416
+      ],
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Sport Config": {
+      "main": [
+        [
+          {
+            "node": "Get Web Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get BetCity Event": {
+      "main": [
+        [
+          {
+            "node": "Process Soccer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Basketball",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Basketball": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Group by Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Sport Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Soccer": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Group by Soccer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Web Url": {
+      "main": [
+        [
+          {
+            "node": "Get BetCity Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Soccer": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Get Event - Soccer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Sheet - Soccer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Events": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Event - Soccer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sheet - Soccer": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append To Sheet - Soccer": {
+      "main": [
+        [
+          {
+            "node": "Loop Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event - Soccer": {
+      "main": [
+        [
+          {
+            "node": "Loop Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Event - Soccer": {
+      "main": [
+        [
+          {
+            "node": "Append To Sheet - Soccer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Basketball": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items - Basketball": {
+      "main": [
+        [
+          {
+            "node": "Get Event - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Sheet - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event - Basketball": {
+      "main": [
+        [
+          {
+            "node": "Loop Events - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sheet - Basketball": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Events - Basketball": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Event - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Event - Basketball": {
+      "main": [
+        [
+          {
+            "node": "Append To Sheet - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append To Sheet - Basketball": {
+      "main": [
+        [
+          {
+            "node": "Loop Events - Basketball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Group by Volleyball",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Loop Over Items - Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Get Event - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Sheet - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sheet - Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event - Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Loop Events - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Events - Volleyball": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Event - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Event - Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Append To Sheet - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append To Sheet - Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Loop Events - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Volleyball": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Volleyball",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a41adecc-a5b7-4b38-9d0c-be7a1af40e57",
+  "meta": {
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "Hqdh7rf7ILLSAyU9",
+  "tags": [
+    {
+      "createdAt": "2025-10-23T13:54:40.543Z",
+      "updatedAt": "2025-10-23T13:54:40.543Z",
+      "id": "RvOFIwcLebLy0ZDH",
+      "name": "Volleyball"
+    },
+    {
+      "createdAt": "2025-10-23T13:54:29.120Z",
+      "updatedAt": "2025-10-23T13:54:29.120Z",
+      "id": "YnzF6UiH2lPOpiwj",
+      "name": "Basketball"
+    },
+    {
+      "createdAt": "2025-10-22T06:39:44.591Z",
+      "updatedAt": "2025-10-22T06:39:44.591Z",
+      "id": "fO55yy2m5Cs6Z9j7",
+      "name": "BetCity"
+    }
+  ]
+}

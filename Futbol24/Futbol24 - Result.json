@@ -1,0 +1,976 @@
+{
+  "name": "Futbol24 - Result",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "e31021ed-d55d-4a17-a986-401e62d6f785",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 2 days\nfor (let i = 0; i < 2; i++) {\n  const date = new Date(today);\n  date.setDate(today.getDate() - i);\n  urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n}\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        112
+      ],
+      "id": "40afad92-e12f-4fdf-943d-49cd4c160d54",
+      "name": "Get Web Url"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        112
+      ],
+      "id": "3a171504-0e24-4523-9295-e202fadf0b30",
+      "name": "XML to Json"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取得輸入資料\nconst jsons = $input.all();\nconst existingSheetNames = new Set(); // 用來追蹤已存在的 SheetName\n\n// 收集所有唯一的日期\njsons.forEach(item => {\n  const matches = item.json.F24?.Mecze?.M;\n  \n  if (!Array.isArray(matches)) return;\n  \n  matches\n    .forEach(match => {\n      const eventTimeStamp = match.C0 || 0;\n      const date = new Date((eventTimeStamp * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n      \n      existingSheetNames.add(eventDate);\n    });\n});\n\n// 轉換為輸出格式並排序\nconst output = Array.from(existingSheetNames)\n  .sort()\n  .map(date => ({\n    json: {\n      SheetName: date\n    }\n  }));\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -144
+      ],
+      "id": "15b3c8b0-340a-4aea-8242-a52603cb5a86",
+      "name": "Extract Sheet Name"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "title": "=FU24SC-{{ $json.SheetName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2048,
+        -128
+      ],
+      "id": "e5ea3325-0a5e-4f7f-a108-f65ffb2f6673",
+      "name": "Create sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=FU24SC-{{ $json.EventDate }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "MId"
+          ],
+          "schema": [
+            {
+              "id": "Cid",
+              "displayName": "Cid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MId",
+              "displayName": "MId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventDate",
+              "displayName": "EventDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventTime",
+              "displayName": "EventTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PLeagueId",
+              "displayName": "PLeagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LeagueId",
+              "displayName": "LeagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HomeName",
+              "displayName": "HomeName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AwayName",
+              "displayName": "AwayName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventStatus",
+              "displayName": "EventStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HT",
+              "displayName": "HT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FT",
+              "displayName": "FT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AET",
+              "displayName": "AET",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AP",
+              "displayName": "AP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HRedCard",
+              "displayName": "HRedCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ARedCard",
+              "displayName": "ARedCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Info",
+              "displayName": "Info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2384,
+        128
+      ],
+      "id": "a0107fa2-fdb1-4d2d-8dd5-2d62443d417a",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// 按照 EventDate 分組\nconst groupedByDate = items.reduce((acc, item) => {\n  const eventDate = item.json.EventDate;\n  if (!acc[eventDate]) {\n    acc[eventDate] = [];\n  }\n  acc[eventDate].push(item.json);\n  return acc;\n}, {});\n\n// 將分組結果轉換為陣列格式並排序\nconst finalOutput = Object.entries(groupedByDate)\n  .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))\n  .map(([date, matches]) => ({\n    json: {\n      EventDate: date,\n      Matches: matches\n    }\n  }));\n\nreturn finalOutput;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        112
+      ],
+      "id": "f7fc2935-54b7-4ed1-8240-f5641a61f6d2",
+      "name": "Group by Event Data"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2016,
+        112
+      ],
+      "id": "e1218acb-6cfc-4693-a03b-78c5f964a2cf",
+      "name": "Loop Over - Append Event Data to Sheet"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1824,
+        -144
+      ],
+      "id": "a3d7aa05-a688-4666-a9d0-6311fb4b8f3c",
+      "name": "Loop Over - Create sheet"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.all().flatMap(item => {\n  const matches = item.json?.F24?.Mecze?.M;\n  \n  if (!Array.isArray(matches)) return [];\n  \n  // 計算一小時前的時間戳（秒）\n  const oneHourAgo = Math.floor(Date.now() / 1000) - (60 * 60 * 2);\n  \n  return matches\n    .filter(match => {\n      const s2 = match.S2 || '';\n      const eventTimeStamp = match.C0 || 0;\n      \n      const needToGetDetail = s2.length > 3;\n      const isAfterOneHourAgo = eventTimeStamp > oneHourAgo;\n      \n      return needToGetDetail && isAfterOneHourAgo;\n    })\n    .map(match => {\n      const eventTimeStamp = match.C0 || 0;\n      const date = new Date((eventTimeStamp * 1000) + (8 * 60 * 60 * 1000));\n      const eventDate = date.toISOString().split('T')[0];\n     \n      const s2 = match.S2 || '';\n      const needToGetDetail = s2.length > 3;\n      const url = 'https://www.futbol24.com/ml/matchActionXml/?MId=' + match.MId;\n      \n      return {\n        json: {\n          EventDate: eventDate,\n          MId: match.MId || '',\n          url: url,\n          needToGetDetail,\n          s2,\n        }\n      };\n    });\n});\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        352
+      ],
+      "id": "530c3b7d-8a03-4484-b8c0-ce5098a0fe24",
+      "name": "Get Score Details"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Cookie",
+              "value": "uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; smvr=eyJ2aXNpdHMiOjEsInZpZXdzIjoyLCJ0cyI6MTc2MDYxNTY4MTQ3MSwiaXNOZXdTZXNzaW9uIjpmYWxzZX0=; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1232,
+        112
+      ],
+      "id": "7e5f8af3-000d-454a-946a-355b4af70b69",
+      "name": "Get F24 Result"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Cookie",
+              "value": "uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; smvr=eyJ2aXNpdHMiOjEsInZpZXdzIjoyLCJ0cyI6MTc2MDYxNTY4MTQ3MSwiaXNOZXdTZXNzaW9uIjpmYWxzZX0=; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt"
+            },
+            {
+              "name": "referer",
+              "value": "https://www.futbol24.com/Live?__igp=1&LiveDate=20251115"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 10000
+            }
+          },
+          "proxy": ""
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        352
+      ],
+      "id": "cd2d897b-b468-4cd8-a101-90562da9052f",
+      "name": "Get F24 Result Detail"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        352
+      ],
+      "id": "45ce0aa8-3099-4aa1-b967-f4a97e8d8464",
+      "name": "XML to Json - Result Detail"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 假設 Get Score Details 的資料在 $('Get Score Details').all()\nconst scoreDetails = $('Get Score Details').all();\n\n// 建立 MId 到 EventDate 的對應表\nconst eventDateMap = {};\nscoreDetails.forEach(item => {\n  const mid = item.json?.MId;\n  const eventDate = item.json?.EventDate;\n  if (mid && eventDate) {\n    eventDateMap[mid] = eventDate;\n  }\n});\n\n// 處理當前資料\nconst output = $input.all().map(item => {\n  const MId = item.json?.Mecz?.id ?? '';\n  const events = item.json?.Mecz?.akcja;\n  \n  // 從對應表中取得 EventDate\n  const eventDate = eventDateMap[MId] || '';\n  \n  // 初始化結果物件\n  const result = {\n    EventDate: eventDate,\n    MId,\n    FT: null,\n    HT: null,\n    AP: null,\n    AET: null\n  };\n  \n  // 如果 events 是陣列，填入對應的比分\n  if (Array.isArray(events)) {\n    const validKeys = ['FT', 'HT', 'AP', 'AET'];\n    \n    events.forEach(event => {\n      if (validKeys.includes(event.m)) {\n        result[event.m] = `${event.H}-${event.G}`;\n      }\n    });\n  }\n  \n  return { json: result };\n});\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        352
+      ],
+      "id": "583f720d-7191-419f-a799-133cf24e80ce",
+      "name": "Get Result Detail"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2592,
+        352
+      ],
+      "id": "4d1f6ab9-8054-4066-94a4-0b8ea718629a",
+      "name": "Loop Over - Append Event Data to Sheet1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// 按照 EventDate 分組\nconst groupedByDate = items.reduce((acc, item) => {\n  const eventDate = item.json.EventDate;\n  if (!acc[eventDate]) {\n    acc[eventDate] = [];\n  }\n  acc[eventDate].push(item.json);\n  return acc;\n}, {});\n\n// 將分組結果轉換為陣列格式並排序\nconst finalOutput = Object.entries(groupedByDate)\n  .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))\n  .map(([date, matches]) => ({\n    json: {\n      EventDate: date,\n      Matches: matches\n    }\n  }));\n\nreturn finalOutput;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2384,
+        352
+      ],
+      "id": "8f12e248-811a-46b3-830c-950e9ef11065",
+      "name": "Group by Result Detail"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop 內部的 Code 節點\nreturn $input.item.json.Matches.map(match => ({\n  json: match\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        128
+      ],
+      "id": "7966e52d-0f4a-43a8-9fc6-8b27e451c848",
+      "name": "Get Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst output = [];\n\nitems.forEach(item => {\n  const data = item.json;\n  const matches = data.F24?.Mecze?.M;\n  \n  if (!Array.isArray(matches)) return;\n  \n  const matchesOutput = matches.map(match => {\n    const eventTimeStamp = match.C0 || 0;\n    const date = new Date((eventTimeStamp * 1000) + (8 * 60 * 60 * 1000));\n    const eventDate = date.toISOString().split('T')[0];\n    const eventTime = date.toISOString().replace('T', ' ').slice(0, 19);\n    \n    const s1 = match.S1 || '';\n    const s2 = match.S2 || '';\n    \n    // 擴充特殊情況條件\n    const isSpecial = typeof s1 === 'string' && (s1.includes('w.o.') || s1.includes('P-P') || s1.includes('CANC'));\n    \n    // 檢查 s2 長度是否大於 3\n    const isS2TooLong = typeof s2 === 'string' && s2.length > 3;\n    \n    return {\n      json: {\n        Cid: match.KId,\n        MId: match.MId || '',\n        EventDate: eventDate,\n        EventTime: eventTime,\n        PLeagueId: match._LId,\n        LeagueId: match.LId,\n        HomeName: match.HN || '',\n        AwayName: match.GN || '',\n        EventStatus: match.MStan,\n        HT: (isSpecial || isS2TooLong) ? null : s2, \n        FT: isSpecial ? null : s1, \n        AP: null,\n        AET: null,\n        HRedCard: match.HRCi || '',\n        ARedCard: match.GRCi || '',\n        Info: isSpecial ? s1 : (match.Info || ''),\n      }\n    };\n  });\n  \n  output.push(...matchesOutput);\n});\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        112
+      ],
+      "id": "d0c16bd6-650d-4c0c-9b68-d1f7bb06eafa",
+      "name": "Extract Result Detail"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "186xAXD2zO4StZGh9NJA7boiLTV9BONxyh1ekYcqOgPE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=FU24SC-{{ $json.EventDate }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "MId"
+          ],
+          "schema": [
+            {
+              "id": "Cid",
+              "displayName": "Cid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MId",
+              "displayName": "MId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventDate",
+              "displayName": "EventDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventTime",
+              "displayName": "EventTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PLeagueId",
+              "displayName": "PLeagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LeagueId",
+              "displayName": "LeagueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HomeName",
+              "displayName": "HomeName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AwayName",
+              "displayName": "AwayName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EventStatus",
+              "displayName": "EventStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HT",
+              "displayName": "HT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FT",
+              "displayName": "FT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AET",
+              "displayName": "AET",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AP",
+              "displayName": "AP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HRedCard",
+              "displayName": "HRedCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ARedCard",
+              "displayName": "ARedCard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Info",
+              "displayName": "Info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2976,
+        368
+      ],
+      "id": "a02684d5-5de4-4b9a-bed4-a405cfef3047",
+      "name": "Append or update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fIcjo08BdvfWnSGY",
+          "name": "Google Sheet Auth - Eason"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop 內部的 Code 節點\nreturn $input.item.json.Matches.map(match => ({\n  json: match\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        368
+      ],
+      "id": "4d36d230-ce54-42b5-85da-6c4b27911829",
+      "name": "Get Result Detail1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Web Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Web Url": {
+      "main": [
+        [
+          {
+            "node": "Get F24 Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to Json": {
+      "main": [
+        [
+          {
+            "node": "Extract Sheet Name",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Result Detail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Score Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Create sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Sheet Name": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Create sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Append Event Data to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Event Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Append Event Data to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over - Append Event Data to Sheet": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over - Create sheet": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Score Details": {
+      "main": [
+        [
+          {
+            "node": "Get F24 Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get F24 Result": {
+      "main": [
+        [
+          {
+            "node": "XML to Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get F24 Result Detail": {
+      "main": [
+        [
+          {
+            "node": "XML to Json - Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to Json - Result Detail": {
+      "main": [
+        [
+          {
+            "node": "Get Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Result Detail": {
+      "main": [
+        [
+          {
+            "node": "Group by Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Result Detail": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Append Event Data to Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Result": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Result Detail": {
+      "main": [
+        [
+          {
+            "node": "Group by Event Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over - Append Event Data to Sheet1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Result Detail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over - Append Event Data to Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Result Detail1": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ed50224f-04a2-41dd-8dda-9e0164297899",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
+  },
+  "id": "tmP2KxaVGMMuNQBb",
+  "tags": [
+    {
+      "createdAt": "2025-10-22T14:39:41.914Z",
+      "updatedAt": "2025-10-22T14:39:41.914Z",
+      "id": "c59T6Q5aNg3hXshQ",
+      "name": "Soccer Event"
+    },
+    {
+      "createdAt": "2025-10-16T13:37:44.342Z",
+      "updatedAt": "2025-10-16T13:37:44.342Z",
+      "id": "eCqNi5YNjJc2sg4m",
+      "name": "futbol24"
+    }
+  ]
+}
