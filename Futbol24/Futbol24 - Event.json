@@ -8,28 +8,20 @@
       "type": "n8n-nodes-base.xml",
       "typeVersion": 1,
       "position": [
-        -320,
-        -144
+        -944,
+        -16
       ],
-      "id": "a1b91aa6-0852-45f7-9347-cf7599d0c4e8",
+      "id": "41d8b1e7-3459-4cd4-9d18-427a0702b767",
       "name": "XML to Json"
     },
     {
       "parameters": {
-        "url": "={{ $json.url }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
-            },
-            {
-              "name": "Cookie",
-              "value": "uid1=AAAACmkWy+gQwU7FBXzVAg==; _ga=GA1.2.1246703819.1763101674; _pk_ref.1.705a=%5B%22%22%2C%22%22%2C1763983948%2C%22https%3A%2F%2Fwww.google.com%2F%22%5D; _pk_ses.1.705a=*; _gid=GA1.2.302845992.1763983949; _ga_P3PS8LPV3Y=GS2.2.s1763983950$o7$g1$t1763984007$j3$l0$h0; _gat_f24=1; _pk_id.1.705a=d19298292ac41166.1763101674.8.1763984020.1763983948."
-            }
-          ]
-        },
+        "method": "POST",
+        "url": "https://ghostifybridge.klt1p.oneback.net/api/GetResult",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ {\n  \"Method\": \"GET\",\n  \"Uri\": $json.url,\n  \"Headers\": {\n    \"User-Agent\": [\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36\"],\n    \"Cookie\": [\"uid1=AAAACmkWy+gQwU7FBXzVAg==; _ga=GA1.2.1246703819.1763101674; _pk_ref.1.705a=%5B%22%22%2C%22%22%2C1763983948%2C%22https%3A%2F%2Fwww.google.com%2F%22%5D; _pk_ses.1.705a=*; _gid=GA1.2.302845992.1763983949; _ga_P3PS8LPV3Y=GS2.2.s1763983950$o7$g1$t1763984007$j3$l0$h0; _gat_f24=1; _pk_id.1.705a=d19298292ac41166.1763101674.8.1763984020.1763983948.\"]\n  },\n  \"UseCookies\": false\n} }}",
         "options": {
           "batching": {
             "batch": {
@@ -42,11 +34,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -512,
-        -144
+        -736,
+        -272
       ],
-      "id": "fd0fc497-1ff4-4964-b91c-7a16cbccc68a",
+      "id": "d3afe1a8-79d3-4ec0-a03a-790ae2617747",
       "name": "HTTP Request - Get F24 Web Event"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      data: item.json.content\n    }\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -272
+      ],
+      "id": "24389cbf-3331-4f0d-be88-3c171a407245",
+      "name": "Extract Ghostify Content"
     },
     {
       "parameters": {
@@ -55,10 +60,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -96,
-        -144
+        -752,
+        -16
       ],
-      "id": "9b8debc5-6f78-49ac-9e9f-1ebe5517e836",
+      "id": "3e32ac0e-ff64-4869-91a6-ad584fb5d3f2",
       "name": "Extract Event Data"
     },
     {
@@ -68,30 +73,30 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "=application/json",
-        "body": "={{    JSON.stringify(         {\"events\":$(\"Extract Event Data\").all().map(item => item.json)}         ) }}",
+        "body": "={{    JSON.stringify(         {\"events\":$(\"Filter TBC\").all().map(item => item.json)}         ) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        160,
-        -144
+        -304,
+        -16
       ],
-      "id": "5bded120-5a07-40ab-9f1a-c3c6b0bedd07",
+      "id": "3eebac19-51cc-4edb-8001-2e391f892400",
       "name": "HTTP Request1",
       "executeOnce": true
     },
     {
       "parameters": {
-        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 14 days\n// for (let i = 0; i < 2; i++) {\n//   const date = new Date(today);\n//   date.setDate(today.getDate() + i);\n//   urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n// }\n\n// Add live now URL\nurls.push('https://p.futbol24.com/f24/u/liveNow_15.xml');\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
+        "jsCode": "// Format date as yyyyMMdd\nconst formatDate = (date) => {\n  const year = date.getFullYear();\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const day = String(date.getDate()).padStart(2, '0');\n  return `${year}${month}${day}`;\n};\n\n// Get today's date\nconst today = new Date();\n\n// Build URL array\nconst urls = [];\n\n// Generate URLs for the next 14 days\nfor (let i = 0; i < 4; i++) {\n  const date = new Date(today);\n  date.setDate(today.getDate() + i);\n  urls.push('https://www.futbol24.com/matchDayXml/?Day=' + formatDate(date));\n}\n\n// Add live now URL\nurls.push('https://p.futbol24.com/f24/u/liveNow_15.xml');\n\n// Return URLs for n8n\nreturn urls.map(url => ({ json: { url } }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -688,
-        -144
+        -944,
+        -272
       ],
-      "id": "2d4c7e4c-e63e-4626-a7c5-b42e1d5fd815",
+      "id": "2b14c9e9-ccb0-45de-acb0-7a4b0b853142",
       "name": "Get Web Url1"
     },
     {
@@ -103,10 +108,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        112,
-        -240
+        224,
+        -208
       ],
-      "id": "79c51490-da0d-4e8d-807a-0fb3d645a435",
+      "id": "5cb4030b-a883-4e8c-979e-d09394c2a11f",
       "name": "Sticky Note"
     },
     {
@@ -115,7 +120,7 @@
           "interval": [
             {
               "field": "minutes",
-              "minutesInterval": 15
+              "minutesInterval": 10
             }
           ]
         }
@@ -123,11 +128,55 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -944,
-        -144
+        -1152,
+        -272
       ],
-      "id": "dd080e58-ec95-46e0-8c6f-1219a1b703cf",
+      "id": "337b8c0e-02de-4616-8272-0adf85facfa0",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f4505b73-b0da-46d0-be9b-6435a8f99502",
+              "leftValue": "={{ $json.HomeId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "693234d1-d4ab-48b2-b545-2ae79b5531ea",
+              "leftValue": "={{ $json.AwayId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -496,
+        -16
+      ],
+      "id": "1b65ec7f-2770-492d-a3c3-7ea59f806181",
+      "name": "Filter TBC"
     }
   ],
   "pinData": {},
@@ -147,6 +196,17 @@
       "main": [
         [
           {
+            "node": "Extract Ghostify Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Ghostify Content": {
+      "main": [
+        [
+          {
             "node": "XML to Json",
             "type": "main",
             "index": 0
@@ -158,7 +218,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request1",
+            "node": "Filter TBC",
             "type": "main",
             "index": 0
           }
@@ -186,13 +246,24 @@
           }
         ]
       ]
+    },
+    "Filter TBC": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "61a5913e-e21c-4d03-b079-55244ebe8c4c",
+  "versionId": "e85dd02b-22c0-4dcc-abdb-5584031e3e03",
   "meta": {
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
   },

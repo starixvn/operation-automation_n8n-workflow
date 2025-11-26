@@ -3,22 +3,75 @@
   "nodes": [
     {
       "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      data: item.json.content\n    }\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        -480
+      ],
+      "id": "c7c8d896-3ff0-419f-a7a5-9b07809fccae",
+      "name": "Extract Ghostify Content Detail"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ghostifybridge.klt1p.oneback.net/api/GetResult",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ {\n  \"Method\": \"GET\",\n  \"Uri\": $json.url,\n  \"Headers\": {\n    \"User-Agent\": [\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36\"],\n    \"Cookie\": [\"uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt\"],\n    \"referer\": [\"https://www.futbol24.com/Live?__igp=1&LiveDate=20251115\"]\n  },\n  \"UseCookies\": false\n} }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 10000
+            }
+          },
+          "proxy": ""
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        -480
+      ],
+      "id": "14ec1651-45da-4104-9e4b-83a2de4079fe",
+      "name": "Get F24 Result Detail1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        2528,
+        -480
+      ],
+      "id": "4f8833c7-1ebf-4d37-88cf-591367e8ac37",
+      "name": "XML to Json - Result Detail1"
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
               "field": "minutes",
-              "minutesInterval": 10
+              "minutesInterval": 1
             }
           ]
         }
       },
-      "id": "e31021ed-d55d-4a17-a986-401e62d6f785",
+      "id": "3106da7e-21b5-4246-84b7-90ae7558f24e",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        944,
-        112
+        1088,
+        -736
       ]
     },
     {
@@ -28,10 +81,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1088,
-        112
+        1232,
+        -736
       ],
-      "id": "40afad92-e12f-4fdf-943d-49cd4c160d54",
+      "id": "4909f706-b455-4336-ae19-fda8daed651f",
       "name": "Get Web Url"
     },
     {
@@ -41,10 +94,10 @@
       "type": "n8n-nodes-base.xml",
       "typeVersion": 1,
       "position": [
-        1392,
-        112
+        1760,
+        -736
       ],
-      "id": "3a171504-0e24-4523-9295-e202fadf0b30",
+      "id": "9c2e01b0-9dab-4ee1-a111-02246ba5e677",
       "name": "XML to Json"
     },
     {
@@ -54,10 +107,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        -144
+        2032,
+        -992
       ],
-      "id": "15b3c8b0-340a-4aea-8242-a52603cb5a86",
+      "id": "078d2a0e-1125-4068-8d52-f06009976ff6",
       "name": "Extract Sheet Name"
     },
     {
@@ -74,10 +127,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2048,
-        -128
+        2640,
+        -976
       ],
-      "id": "e5ea3325-0a5e-4f7f-a108-f65ffb2f6673",
+      "id": "471452bf-a3d3-4810-a67c-f2f789619e07",
       "name": "Create sheet",
       "alwaysOutputData": true,
       "credentials": {
@@ -219,8 +272,8 @@
               "removed": false
             },
             {
-              "id": "AET",
-              "displayName": "AET",
+              "id": "AP",
+              "displayName": "AP",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -229,8 +282,8 @@
               "removed": false
             },
             {
-              "id": "AP",
-              "displayName": "AP",
+              "id": "AET",
+              "displayName": "AET",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -279,10 +332,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2384,
-        128
+        2976,
+        -720
       ],
-      "id": "a0107fa2-fdb1-4d2d-8dd5-2d62443d417a",
+      "id": "b33060b8-1b97-4648-940a-267abc1cc86a",
       "name": "Append or update row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -299,10 +352,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1840,
-        112
+        2432,
+        -736
       ],
-      "id": "f7fc2935-54b7-4ed1-8240-f5641a61f6d2",
+      "id": "7c67ea9e-4d98-4dc0-89ec-fdf80ace145e",
       "name": "Group by Event Data"
     },
     {
@@ -312,10 +365,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2016,
-        112
+        2608,
+        -736
       ],
-      "id": "e1218acb-6cfc-4693-a03b-78c5f964a2cf",
+      "id": "8a3f146b-5b6a-405e-b83c-86a40df6058b",
       "name": "Loop Over - Append Event Data to Sheet"
     },
     {
@@ -325,10 +378,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1824,
-        -144
+        2416,
+        -992
       ],
-      "id": "a3d7aa05-a688-4666-a9d0-6311fb4b8f3c",
+      "id": "170e5e07-57ce-4ff8-b88a-28983ad69fd9",
       "name": "Loop Over - Create sheet"
     },
     {
@@ -338,97 +391,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        352
+        2032,
+        -496
       ],
-      "id": "530c3b7d-8a03-4484-b8c0-ce5098a0fe24",
+      "id": "b97b21cf-b07d-45e7-bf76-1f47be6672f8",
       "name": "Get Score Details"
-    },
-    {
-      "parameters": {
-        "url": "={{ $json.url }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
-            },
-            {
-              "name": "Cookie",
-              "value": "uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; smvr=eyJ2aXNpdHMiOjEsInZpZXdzIjoyLCJ0cyI6MTc2MDYxNTY4MTQ3MSwiaXNOZXdTZXNzaW9uIjpmYWxzZX0=; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt"
-            }
-          ]
-        },
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 5000
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1232,
-        112
-      ],
-      "id": "7e5f8af3-000d-454a-946a-355b4af70b69",
-      "name": "Get F24 Result"
-    },
-    {
-      "parameters": {
-        "url": "={{ $json.url }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
-            },
-            {
-              "name": "Cookie",
-              "value": "uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; smvr=eyJ2aXNpdHMiOjEsInZpZXdzIjoyLCJ0cyI6MTc2MDYxNTY4MTQ3MSwiaXNOZXdTZXNzaW9uIjpmYWxzZX0=; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt"
-            },
-            {
-              "name": "referer",
-              "value": "https://www.futbol24.com/Live?__igp=1&LiveDate=20251115"
-            }
-          ]
-        },
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 10000
-            }
-          },
-          "proxy": ""
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1840,
-        352
-      ],
-      "id": "cd2d897b-b468-4cd8-a101-90562da9052f",
-      "name": "Get F24 Result Detail"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.xml",
-      "typeVersion": 1,
-      "position": [
-        2016,
-        352
-      ],
-      "id": "45ce0aa8-3099-4aa1-b967-f4a97e8d8464",
-      "name": "XML to Json - Result Detail"
     },
     {
       "parameters": {
@@ -437,10 +404,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2192,
-        352
+        2736,
+        -480
       ],
-      "id": "583f720d-7191-419f-a799-133cf24e80ce",
+      "id": "5dab5401-f429-444b-b3c7-57aa48e794c3",
       "name": "Get Result Detail"
     },
     {
@@ -450,10 +417,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2592,
-        352
+        3168,
+        -480
       ],
-      "id": "4d1f6ab9-8054-4066-94a4-0b8ea718629a",
+      "id": "8429c5ab-a383-4e32-9887-7acf3f2a6bb2",
       "name": "Loop Over - Append Event Data to Sheet1"
     },
     {
@@ -463,10 +430,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2384,
-        352
+        2960,
+        -480
       ],
-      "id": "8f12e248-811a-46b3-830c-950e9ef11065",
+      "id": "cfbde86c-31a6-49ed-90dc-f273054ab40e",
       "name": "Group by Result Detail"
     },
     {
@@ -476,10 +443,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2192,
-        128
+        2784,
+        -720
       ],
-      "id": "7966e52d-0f4a-43a8-9fc6-8b27e451c848",
+      "id": "9a857721-e235-40c5-8ffa-d37f61753a00",
       "name": "Get Result"
     },
     {
@@ -489,10 +456,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        112
+        2032,
+        -736
       ],
-      "id": "d0c16bd6-650d-4c0c-9b68-d1f7bb06eafa",
+      "id": "f4154278-835f-4bfe-a9e6-b6b77248e6fc",
       "name": "Extract Result Detail"
     },
     {
@@ -626,8 +593,8 @@
               "removed": false
             },
             {
-              "id": "AET",
-              "displayName": "AET",
+              "id": "AP",
+              "displayName": "AP",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -636,8 +603,8 @@
               "removed": false
             },
             {
-              "id": "AP",
-              "displayName": "AP",
+              "id": "AET",
+              "displayName": "AET",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -686,10 +653,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2976,
-        368
+        3552,
+        -464
       ],
-      "id": "a02684d5-5de4-4b9a-bed4-a405cfef3047",
+      "id": "c728c750-9e99-4406-b9bc-96a9ef5b1a7a",
       "name": "Append or update row in sheet1",
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -706,15 +673,87 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2800,
-        368
+        3376,
+        -464
       ],
-      "id": "4d36d230-ce54-42b5-85da-6c4b27911829",
+      "id": "ee8c2ebc-7198-41f7-87e7-b62bba69e586",
       "name": "Get Result Detail1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ghostifybridge.klt1p.oneback.net/api/GetResult",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ {\n  \"Method\": \"GET\",\n  \"Uri\": $json.url,\n  \"Headers\": {\n    \"User-Agent\": [\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36\"],\n    \"Cookie\": [\"uid1=AAAACmjcxXqSL1+dDIYcAg==; betting-tips-timezone-offset=14400; betting-tips-timezone=Asia/Dubai; smuuid=199ecde5abb-93a9a2d65b21-83e523b0-f60febcb-eb12a237-ce99c0502e30; _ga=GA1.2.569998963.1759298940; _ga_YM6XCZ6FJ6=GS2.1.s1760615619$o1$g1$t1760615715$j27$l0$h0; _gid=GA1.2.1645421226.1763359753; _pk_ses.1.705a=*; _gat_f24=1; _ga_P3PS8LPV3Y=GS2.2.s1763463514$o23$g1$t1763465082$j60$l0$h0; _pk_id.1.705a=10cc70f3c4a72f0e.1759298940.23.1763465085.1763463509. dnt\"]\n  },\n  \"UseCookies\": false\n} }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        -736
+      ],
+      "id": "3726aa22-e8a0-4dd2-8f18-f701372a5d38",
+      "name": "Get F24 Result1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      data: item.json.content\n    }\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -736
+      ],
+      "id": "70a8c7f4-f237-4895-b259-6ada676c80db",
+      "name": "Extract Ghostify Content"
     }
   ],
   "pinData": {},
   "connections": {
+    "Extract Ghostify Content Detail": {
+      "main": [
+        [
+          {
+            "node": "XML to Json - Result Detail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get F24 Result Detail1": {
+      "main": [
+        [
+          {
+            "node": "Extract Ghostify Content Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to Json - Result Detail1": {
+      "main": [
+        [
+          {
+            "node": "Get Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Schedule Trigger": {
       "main": [
         [
@@ -730,7 +769,7 @@
       "main": [
         [
           {
-            "node": "Get F24 Result",
+            "node": "Get F24 Result1",
             "type": "main",
             "index": 0
           }
@@ -758,7 +797,7 @@
         ]
       ]
     },
-    "Create sheet": {
+    "Extract Sheet Name": {
       "main": [
         [
           {
@@ -769,7 +808,7 @@
         ]
       ]
     },
-    "Extract Sheet Name": {
+    "Create sheet": {
       "main": [
         [
           {
@@ -830,40 +869,7 @@
       "main": [
         [
           {
-            "node": "Get F24 Result Detail",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get F24 Result": {
-      "main": [
-        [
-          {
-            "node": "XML to Json",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get F24 Result Detail": {
-      "main": [
-        [
-          {
-            "node": "XML to Json - Result Detail",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "XML to Json - Result Detail": {
-      "main": [
-        [
-          {
-            "node": "Get Result Detail",
+            "node": "Get F24 Result Detail1",
             "type": "main",
             "index": 0
           }
@@ -875,6 +881,18 @@
         [
           {
             "node": "Group by Result Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over - Append Event Data to Sheet1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Result Detail1",
             "type": "main",
             "index": 0
           }
@@ -914,18 +932,6 @@
         ]
       ]
     },
-    "Loop Over - Append Event Data to Sheet1": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Get Result Detail1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Append or update row in sheet1": {
       "main": [
         [
@@ -947,13 +953,35 @@
           }
         ]
       ]
+    },
+    "Get F24 Result1": {
+      "main": [
+        [
+          {
+            "node": "Extract Ghostify Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Ghostify Content": {
+      "main": [
+        [
+          {
+            "node": "XML to Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "ed50224f-04a2-41dd-8dda-9e0164297899",
+  "versionId": "313524b0-a23f-4c2f-be78-f0298e90f875",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "98bfed1c0f22fa9e07d0e38dc58da94b0281d63095bd4ba14894d42a90a063e3"
